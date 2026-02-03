@@ -1,0 +1,602 @@
+[
+  {
+    "slug": "long_jump",
+    "name": "Прыжок в длину",
+    "category": "Сила",
+    "unit": "m",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🦘"
+  },
+  {
+    "slug": "high_jump",
+    "name": "Прыжок в высоту",
+    "category": "Сила",
+    "unit": "cm",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🦘"
+  },
+  {
+    "slug": "back_squat",
+    "name": "Присед на спине",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": true,
+    "icon": "🏋️"
+  },
+  {
+    "slug": "front_squat",
+    "name": "Присед на груди",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": true,
+    "icon": "🏋️"
+  },
+  {
+    "slug": "walking_lunges",
+    "name": "Выпады",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🦵"
+  },
+  {
+    "slug": "deadlift",
+    "name": "Становая тяга",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": true,
+    "icon": "🏋️"
+  },
+  {
+    "slug": "pullup_overhand",
+    "name": "Подтягивания (прямой хват)",
+    "category": "Сила",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "💪"
+  },
+  {
+    "slug": "pullup_underhand",
+    "name": "Подтягивания (обратный хват)",
+    "category": "Сила",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "💪"
+  },
+  {
+    "slug": "weighted_pullup",
+    "name": "Подтягивания с весом (прямой хват)",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": true,
+    "icon": "💪"
+  },
+  {
+    "slug": "weighted_pullup_underhand",
+    "name": "Подтягивания с весом (обратный хват)",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": true,
+    "icon": "💪"
+  },
+  {
+    "slug": "bench_press",
+    "name": "Жим лёжа",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": true,
+    "icon": "🏋️"
+  },
+  {
+    "slug": "overhead_press",
+    "name": "Жим стоя",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": true,
+    "icon": "🏋️"
+  },
+  {
+    "slug": "pushups",
+    "name": "Отжимания",
+    "category": "Сила",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "💪"
+  },
+  {
+    "slug": "dips",
+    "name": "Брусья",
+    "category": "Сила",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "💪"
+  },
+  {
+    "slug": "weighted_dip",
+    "name": "Брусья с весом",
+    "category": "Сила",
+    "unit": "xBW",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": true,
+    "icon": "💪"
+  },
+  {
+    "slug": "dead_hang",
+    "name": "Вис",
+    "category": "Статика",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "wall_sit",
+    "name": "Стульчик",
+    "category": "Статика",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "plank",
+    "name": "Планка",
+    "category": "Статика",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "side_plank",
+    "name": "Боковая планка",
+    "category": "Статика",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "hollow_hold",
+    "name": "Hollow (кор)",
+    "category": "Статика",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "superman_hold",
+    "name": "Супермен (спина)",
+    "category": "Статика",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "l_sit",
+    "name": "Уголок",
+    "category": "Статика",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "copenhagen_plank",
+    "name": "Копенгагенская планка",
+    "category": "Статика",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "strength",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "run_100m",
+    "name": "Бег 100 м",
+    "category": "Бег",
+    "unit": "sec",
+    "direction": "lower_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "⚡"
+  },
+  {
+    "slug": "run_400m",
+    "name": "Бег 400 м",
+    "category": "Бег",
+    "unit": "sec",
+    "direction": "lower_better",
+    "stat": "endurance",
+    "has1RM": false,
+    "icon": "🏃"
+  },
+  {
+    "slug": "run_1000m",
+    "name": "Бег 1000 м",
+    "category": "Бег",
+    "unit": "sec",
+    "direction": "lower_better",
+    "stat": "endurance",
+    "has1RM": false,
+    "icon": "🏃"
+  },
+  {
+    "slug": "run_5km",
+    "name": "Бег 5 км",
+    "category": "Бег",
+    "unit": "sec",
+    "direction": "lower_better",
+    "stat": "endurance",
+    "has1RM": false,
+    "icon": "🏃"
+  },
+  {
+    "slug": "run_10km",
+    "name": "Бег 10 км",
+    "category": "Бег",
+    "unit": "sec",
+    "direction": "lower_better",
+    "stat": "endurance",
+    "has1RM": false,
+    "icon": "🏃"
+  },
+  {
+    "slug": "handstand_hold",
+    "name": "Стойка на руках",
+    "category": "Навыки",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "handstand_walk",
+    "name": "Ходьба на руках",
+    "category": "Навыки",
+    "unit": "m",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "hspu",
+    "name": "Отжимания в стойке",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "deficit_hspu",
+    "name": "HSPU с дефицитом",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "toes_to_bar",
+    "name": "Носки к перекладине",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "kipping_pullups",
+    "name": "Киппинг подтягивания",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "double_unders",
+    "name": "Двойные прыжки",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🪢"
+  },
+  {
+    "slug": "bar_muscle_up",
+    "name": "Выход на турнике",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "ring_muscle_up",
+    "name": "Выход на кольцах",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "pistol_squat",
+    "name": "Пистолетик",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🦵"
+  },
+  {
+    "slug": "rope_climb",
+    "name": "Лазание по канату",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🧗"
+  },
+  {
+    "slug": "skin_the_cat",
+    "name": "Skin the cat",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "front_lever",
+    "name": "Передний вис",
+    "category": "Навыки",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "back_lever",
+    "name": "Задний вис",
+    "category": "Навыки",
+    "unit": "sec",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "straddle_press",
+    "name": "Спичаг",
+    "category": "Навыки",
+    "unit": "reps",
+    "direction": "higher_better",
+    "stat": "agility",
+    "has1RM": false,
+    "icon": "🤸"
+  },
+  {
+    "slug": "burpee_100",
+    "name": "100 берпи",
+    "category": "Выносливость",
+    "unit": "sec",
+    "direction": "lower_better",
+    "stat": "endurance",
+    "has1RM": false,
+    "icon": "🔥"
+  },
+  {
+    "slug": "wallball_100",
+    "name": "100 мячей (wall ball)",
+    "category": "Выносливость",
+    "unit": "sec",
+    "direction": "lower_better",
+    "stat": "endurance",
+    "has1RM": false,
+    "icon": "🔥"
+  },
+  {
+    "slug": "row_1000m",
+    "name": "Гребля 1000 м",
+    "category": "Выносливость",
+    "unit": "sec",
+    "direction": "lower_better",
+    "stat": "endurance",
+    "has1RM": false,
+    "icon": "🚣"
+  },
+  {
+    "slug": "toe_touch_stand",
+    "name": "Наклон вперёд стоя",
+    "category": "Подвижность",
+    "unit": "level",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "seated_forward_fold",
+    "name": "Наклон вперёд сидя",
+    "category": "Подвижность",
+    "unit": "level",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "pike_stretch",
+    "name": "Подъём ноги лёжа на спине",
+    "category": "Подвижность",
+    "unit": "deg",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "straddle_stretch",
+    "name": "Ноги в стороны сидя",
+    "category": "Подвижность",
+    "unit": "deg",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "frog_stretch",
+    "name": "Лягушка",
+    "category": "Подвижность",
+    "unit": "cm",
+    "direction": "lower_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🐸"
+  },
+  {
+    "slug": "lotus",
+    "name": "Лотос",
+    "category": "Подвижность",
+    "unit": "level",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🧘"
+  },
+  {
+    "slug": "hip_flexor",
+    "name": "Сгибание бедра лёжа",
+    "category": "Подвижность",
+    "unit": "cm",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "pancake",
+    "name": "Головостоп",
+    "category": "Подвижность",
+    "unit": "cm",
+    "direction": "lower_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "bridge",
+    "name": "Мостик",
+    "category": "Подвижность",
+    "unit": "level",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🌉"
+  },
+  {
+    "slug": "shoulder_rotation",
+    "name": "Вращение плеча",
+    "category": "Подвижность",
+    "unit": "level",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "shoulder_flexion",
+    "name": "Сгибание плеча",
+    "category": "Подвижность",
+    "unit": "deg",
+    "direction": "higher_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "side_split",
+    "name": "Шпагат поперечный",
+    "category": "Подвижность",
+    "unit": "cm",
+    "direction": "lower_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "front_split",
+    "name": "Шпагат продольный",
+    "category": "Подвижность",
+    "unit": "cm",
+    "direction": "lower_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  },
+  {
+    "slug": "pistol_stretch",
+    "name": "Пистолет (растяжка)",
+    "category": "Подвижность",
+    "unit": "cm",
+    "direction": "lower_better",
+    "stat": "flexibility",
+    "has1RM": false,
+    "icon": "🦋"
+  }
+]
