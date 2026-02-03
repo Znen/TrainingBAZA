@@ -1,0 +1,981 @@
+{
+    "levels": [
+        {
+            "id": "minimal",
+            "name": "Минималка",
+            "points": 10,
+            "color": "#6b7280"
+        },
+        {
+            "id": "novice",
+            "name": "Новичок",
+            "points": 25,
+            "color": "#84cc16"
+        },
+        {
+            "id": "intermediate",
+            "name": "Середнячок",
+            "points": 40,
+            "color": "#22c55e"
+        },
+        {
+            "id": "amateur",
+            "name": "Любитель",
+            "points": 55,
+            "color": "#14b8a6"
+        },
+        {
+            "id": "base",
+            "name": "База",
+            "points": 65,
+            "color": "#0ea5e9"
+        },
+        {
+            "id": "athlete",
+            "name": "Атлет",
+            "points": 75,
+            "color": "#8b5cf6"
+        },
+        {
+            "id": "pro",
+            "name": "Про",
+            "points": 85,
+            "color": "#f97316"
+        },
+        {
+            "id": "elite",
+            "name": "Элита",
+            "points": 95,
+            "color": "#eab308"
+        }
+    ],
+    "standards": {
+        "long_jump": {
+            "category": "strength",
+            "unit": "m",
+            "direction": "higher_better",
+            "values": [
+                1.4,
+                1.5,
+                1.8,
+                2,
+                2.2,
+                2.4,
+                2.7,
+                3
+            ]
+        },
+        "high_jump": {
+            "category": "strength",
+            "unit": "cm",
+            "direction": "higher_better",
+            "values": [
+                40,
+                50,
+                60,
+                75,
+                90,
+                110,
+                125,
+                130
+            ]
+        },
+        "back_squat": {
+            "category": "strength",
+            "unit": "xBW",
+            "direction": "higher_better",
+            "values": [
+                0.6,
+                0.7,
+                0.8,
+                1,
+                1.2,
+                1.5,
+                2,
+                2.5
+            ],
+            "note": "коэффициент от веса тела"
+        },
+        "front_squat": {
+            "category": "strength",
+            "unit": "xBW",
+            "direction": "higher_better",
+            "values": [
+                0.4,
+                0.5,
+                0.6,
+                0.8,
+                1,
+                1.2,
+                1.5,
+                2
+            ]
+        },
+        "walking_lunges": {
+            "category": "strength",
+            "unit": "xBW",
+            "direction": "higher_better",
+            "values": [
+                0.1,
+                0.2,
+                0.3,
+                0.4,
+                0.5,
+                0.6,
+                0.8,
+                1
+            ],
+            "note": "x20 повторов"
+        },
+        "deadlift": {
+            "category": "strength",
+            "unit": "xBW",
+            "direction": "higher_better",
+            "values": [
+                0.8,
+                0.9,
+                1,
+                1.2,
+                1.5,
+                1.8,
+                2.2,
+                2.5
+            ]
+        },
+        "pullup_overhand": {
+            "category": "strength",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                1,
+                3,
+                5,
+                7,
+                10,
+                16,
+                20,
+                30
+            ]
+        },
+        "weighted_pullup": {
+            "category": "strength",
+            "unit": "xBW",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                null,
+                0.15,
+                0.3,
+                0.5,
+                0.7,
+                0.9
+            ],
+            "note": "null = не применимо"
+        },
+        "bench_press": {
+            "category": "strength",
+            "unit": "xBW",
+            "direction": "higher_better",
+            "values": [
+                0.4,
+                0.5,
+                0.6,
+                0.8,
+                1,
+                1.4,
+                1.6,
+                1.8
+            ]
+        },
+        "overhead_press": {
+            "category": "strength",
+            "unit": "xBW",
+            "direction": "higher_better",
+            "values": [
+                0.2,
+                0.3,
+                0.35,
+                0.45,
+                0.55,
+                0.7,
+                0.8,
+                0.9
+            ]
+        },
+        "pushups": {
+            "category": "strength",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                5,
+                10,
+                15,
+                20,
+                20,
+                30,
+                40,
+                50
+            ]
+        },
+        "dips": {
+            "category": "strength",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                5,
+                10,
+                15,
+                30,
+                40,
+                50
+            ]
+        },
+        "weighted_dip": {
+            "category": "strength",
+            "unit": "xBW",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                null,
+                0.1,
+                0.2,
+                0.4,
+                0.65,
+                0.85
+            ]
+        },
+        "dead_hang": {
+            "category": "static",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                30,
+                60,
+                30,
+                60,
+                60,
+                90,
+                120,
+                180
+            ],
+            "note": "на двух/одной руке"
+        },
+        "wall_sit": {
+            "category": "static",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                40,
+                60,
+                90,
+                120,
+                150,
+                180,
+                240,
+                300
+            ]
+        },
+        "plank": {
+            "category": "static",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                40,
+                60,
+                90,
+                120,
+                150,
+                180,
+                240,
+                300
+            ]
+        },
+        "side_plank": {
+            "category": "static",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                40,
+                60,
+                90,
+                120,
+                150,
+                180,
+                240,
+                300
+            ]
+        },
+        "hollow_hold": {
+            "category": "static",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                20,
+                30,
+                40,
+                50,
+                60,
+                90,
+                120,
+                180
+            ]
+        },
+        "superman_hold": {
+            "category": "static",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                40,
+                60,
+                20,
+                30,
+                30,
+                60,
+                90,
+                120
+            ],
+            "note": "на полу/на голеностопе"
+        },
+        "l_sit": {
+            "category": "static",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                20,
+                30,
+                40,
+                60,
+                60,
+                90
+            ],
+            "note": "упор на голеностопе/пол"
+        },
+        "copenhagen_plank": {
+            "category": "static",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                20,
+                30,
+                30,
+                40,
+                60,
+                60,
+                90,
+                120
+            ],
+            "note": "упор на голеностопе"
+        },
+        "run_100m": {
+            "category": "run",
+            "unit": "sec",
+            "direction": "lower_better",
+            "values": [
+                19,
+                17,
+                15,
+                15,
+                14,
+                14,
+                13,
+                12
+            ]
+        },
+        "run_400m": {
+            "category": "run",
+            "unit": "sec",
+            "direction": "lower_better",
+            "values": [
+                100,
+                90,
+                80,
+                75,
+                70,
+                65,
+                60,
+                55
+            ]
+        },
+        "run_1000m": {
+            "category": "run",
+            "unit": "sec",
+            "direction": "lower_better",
+            "values": [
+                360,
+                300,
+                270,
+                240,
+                220,
+                200,
+                180,
+                170
+            ]
+        },
+        "run_5km": {
+            "category": "run",
+            "unit": "sec",
+            "direction": "lower_better",
+            "values": [
+                2100,
+                1680,
+                1440,
+                1320,
+                1200,
+                1080,
+                1020,
+                960
+            ]
+        },
+        "run_10km": {
+            "category": "run",
+            "unit": "sec",
+            "direction": "lower_better",
+            "values": [
+                4800,
+                3300,
+                3000,
+                2700,
+                2520,
+                2280,
+                2100,
+                1980
+            ]
+        },
+        "handstand_hold": {
+            "category": "skills",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                10,
+                20,
+                30,
+                40,
+                50,
+                60
+            ],
+            "note": "у стены/без опоры"
+        },
+        "handstand_walk": {
+            "category": "skills",
+            "unit": "m",
+            "direction": "higher_better",
+            "values": [
+                null,
+                5,
+                10,
+                15,
+                25,
+                50,
+                100,
+                200
+            ],
+            "note": "шагов в стойке"
+        },
+        "hspu": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                5,
+                10,
+                15,
+                25,
+                40,
+                50
+            ],
+            "note": "отжимания в стойке"
+        },
+        "deficit_hspu": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                1,
+                3,
+                5,
+                10,
+                15,
+                25
+            ],
+            "note": "отжимания с дефицитом 20-30см"
+        },
+        "toes_to_bar": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                3,
+                10,
+                15,
+                20,
+                25,
+                30,
+                50
+            ]
+        },
+        "kipping_pullups": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                3,
+                20,
+                50,
+                70,
+                100,
+                150,
+                200
+            ]
+        },
+        "double_unders": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                1,
+                5,
+                20,
+                50,
+                100,
+                150,
+                200
+            ]
+        },
+        "bar_muscle_up": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                1,
+                3,
+                5,
+                10,
+                15,
+                20
+            ]
+        },
+        "ring_muscle_up": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                null,
+                1,
+                3,
+                5,
+                10,
+                15
+            ]
+        },
+        "pistol_squat": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                3,
+                3,
+                10,
+                15,
+                25,
+                50
+            ],
+            "note": "на коробке/на полу/на ногу"
+        },
+        "rope_climb": {
+            "category": "skills",
+            "unit": "style",
+            "direction": "higher_better",
+            "values": [
+                1,
+                1,
+                1,
+                2,
+                3,
+                5,
+                10,
+                15
+            ],
+            "note": "с ногами/без ног/кол-во"
+        },
+        "skin_the_cat": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                3,
+                5,
+                5,
+                5,
+                10,
+                15,
+                20
+            ]
+        },
+        "front_lever": {
+            "category": "skills",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                10,
+                10,
+                10,
+                15,
+                25,
+                30
+            ],
+            "note": "в группировке/ноги вместе"
+        },
+        "back_lever": {
+            "category": "skills",
+            "unit": "sec",
+            "direction": "higher_better",
+            "values": [
+                null,
+                null,
+                10,
+                10,
+                10,
+                15,
+                25,
+                30
+            ]
+        },
+        "straddle_press": {
+            "category": "skills",
+            "unit": "reps",
+            "direction": "higher_better",
+            "values": [
+                null,
+                3,
+                3,
+                3,
+                5,
+                10,
+                15,
+                20
+            ],
+            "note": "у стены/без подставок"
+        },
+        "burpee_100": {
+            "category": "endurance",
+            "unit": "sec",
+            "direction": "lower_better",
+            "values": [
+                null,
+                600,
+                540,
+                480,
+                390,
+                360,
+                300,
+                270
+            ]
+        },
+        "wallball_100": {
+            "category": "endurance",
+            "unit": "sec",
+            "direction": "lower_better",
+            "values": [
+                null,
+                600,
+                540,
+                480,
+                390,
+                360,
+                300,
+                270
+            ]
+        },
+        "row_1000m": {
+            "category": "endurance",
+            "unit": "sec",
+            "direction": "lower_better",
+            "values": [
+                280,
+                264,
+                260,
+                255,
+                245,
+                235,
+                215,
+                205
+            ]
+        },
+        "toe_touch_stand": {
+            "category": "flexibility",
+            "unit": "level",
+            "direction": "higher_better",
+            "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                null,
+                null
+            ],
+            "note": "не касается/касается кончиками/ладонями"
+        },
+        "seated_forward_fold": {
+            "category": "flexibility",
+            "unit": "level",
+            "direction": "higher_better",
+            "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                null,
+                null
+            ],
+            "note": "отриц. наклон/захват стоп/колено к голове"
+        },
+        "pike_stretch": {
+            "category": "flexibility",
+            "unit": "deg",
+            "direction": "higher_better",
+            "values": [
+                90,
+                90,
+                110,
+                120,
+                130,
+                140,
+                null,
+                null
+            ]
+        },
+        "straddle_stretch": {
+            "category": "flexibility",
+            "unit": "deg",
+            "direction": "higher_better",
+            "values": [
+                90,
+                100,
+                120,
+                130,
+                140,
+                150,
+                null,
+                null
+            ]
+        },
+        "frog_stretch": {
+            "category": "flexibility",
+            "unit": "cm",
+            "direction": "higher_better",
+            "values": [
+                25,
+                20,
+                15,
+                10,
+                5,
+                0,
+                null,
+                null
+            ],
+            "note": "см от пола"
+        },
+        "lotus": {
+            "category": "flexibility",
+            "unit": "level",
+            "direction": "higher_better",
+            "values": [
+                1,
+                1,
+                2,
+                2,
+                3,
+                4,
+                null,
+                null
+            ],
+            "note": "невозможно/сидеть возможно/приземлиться"
+        },
+        "hip_flexor": {
+            "category": "flexibility",
+            "unit": "cm",
+            "direction": "higher_better",
+            "values": [
+                0,
+                5,
+                10,
+                15,
+                15,
+                20,
+                null,
+                null
+            ],
+            "note": "колено от уровня живота"
+        },
+        "pancake": {
+            "category": "flexibility",
+            "unit": "cm",
+            "direction": "lower_better",
+            "values": [
+                20,
+                15,
+                10,
+                10,
+                5,
+                0,
+                null,
+                null
+            ],
+            "note": "см от стены головой"
+        },
+        "bridge": {
+            "category": "flexibility",
+            "unit": "level",
+            "direction": "higher_better",
+            "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                null,
+                null
+            ],
+            "note": "стоя не голове/руки на локтях/мостик"
+        },
+        "shoulder_rotation": {
+            "category": "flexibility",
+            "unit": "level",
+            "direction": "higher_better",
+            "values": [
+                1,
+                2,
+                3,
+                4,
+                5,
+                6,
+                null,
+                null
+            ],
+            "note": "руки не касаются/кончиками пальцев/ладони"
+        },
+        "shoulder_flexion": {
+            "category": "flexibility",
+            "unit": "deg",
+            "direction": "higher_better",
+            "values": [
+                65,
+                70,
+                75,
+                80,
+                85,
+                90,
+                null,
+                null
+            ]
+        },
+        "side_split": {
+            "category": "flexibility",
+            "unit": "cm",
+            "direction": "lower_better",
+            "values": [
+                40,
+                40,
+                20,
+                15,
+                5,
+                0,
+                null,
+                null
+            ],
+            "note": "нехватает X см"
+        },
+        "front_split": {
+            "category": "flexibility",
+            "unit": "cm",
+            "direction": "lower_better",
+            "values": [
+                40,
+                40,
+                20,
+                15,
+                5,
+                0,
+                null,
+                null
+            ]
+        },
+        "pistol_stretch": {
+            "category": "flexibility",
+            "unit": "cm",
+            "direction": "higher_better",
+            "values": [
+                3,
+                1.5,
+                0,
+                0,
+                0,
+                0,
+                null,
+                null
+            ],
+            "note": "см под пяткой"
+        }
+    },
+    "categories": {
+        "strength": {
+            "name": "Сила",
+            "icon": "💪",
+            "stat": "strength"
+        },
+        "static": {
+            "name": "Статика",
+            "icon": "🧘",
+            "stat": "strength"
+        },
+        "run": {
+            "name": "Бег",
+            "icon": "🏃",
+            "stat": "endurance"
+        },
+        "skills": {
+            "name": "Навыки",
+            "icon": "🤸",
+            "stat": "agility"
+        },
+        "endurance": {
+            "name": "Выносливость",
+            "icon": "🔥",
+            "stat": "endurance"
+        },
+        "flexibility": {
+            "name": "Подвижность",
+            "icon": "🦋",
+            "stat": "flexibility"
+        }
+    }
+}

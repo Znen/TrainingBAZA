@@ -4,7 +4,7 @@
  */
 
 import type { HistoryBySlug } from './results';
-import standardsData from '../../../standards.json';
+import standardsData from '../../standards.json';
 
 export type StatType = 'strength' | 'endurance' | 'agility' | 'flexibility';
 
