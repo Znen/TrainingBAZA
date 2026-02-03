@@ -70,7 +70,8 @@ export default function AccountPage() {
   useEffect(() => {
     let u = loadUsers();
     if (u.length === 0) {
-      const created = createUser("Тренер", "admin");
+      // Создаём гостя без админ-прав (админ назначается через облако)
+      const created = createUser("Гость", "user");
       u = [created];
       saveUsers(u);
     }
