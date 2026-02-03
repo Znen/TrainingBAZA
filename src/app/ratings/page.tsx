@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import disciplines from "../../../../disciplines.json";
+import disciplines from "../../../disciplines.json";
 import {
   User,
   loadUsers,
