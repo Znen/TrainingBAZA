@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import {
     User,
     loadUsers,
@@ -11,6 +12,7 @@ import {
     createUser,
     isBase64Image,
 } from "@/lib/users";
+import { useAuth } from "@/components/AuthProvider";
 
 // Хелпер для рендеринга аватара (эмодзи или фото)
 function renderAvatar(avatar: string | undefined, size: "sm" | "lg" = "sm") {
@@ -40,6 +42,9 @@ export default function UserSwitcher() {
     const buttonRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+
+    // Supabase auth
+    const { user: authUser, loading: authLoading, signOut } = useAuth();
 
     useEffect(() => {
         setMounted(true);
@@ -159,7 +164,55 @@ export default function UserSwitcher() {
                     Текущий: <strong className="text-white">{activeUser?.name || "Гость"}</strong>
                     {activeUser?.role === "admin" && " 👑 (Тренер)"}
                 </p>
+                {authUser && (
+                    <p className="text-xs text-green-400 mt-1">
+                        ☁️ Облако: {authUser.email}
+                    </p>
+                )}
             </div>
+
+            {/* Cloud Auth Section */}
+            {!authUser && !authLoading && (
+                <div className="p-3 border-b border-zinc-700 bg-blue-900/30">
+                    <p className="text-xs text-blue-300 mb-2">☁️ Облачная синхронизация</p>
+                    <div className="flex gap-2">
+                        <Link
+                            href="/auth/login"
+                            className="flex-1 px-3 py-2 text-xs bg-blue-600 hover:bg-blue-700 rounded-lg text-white text-center transition-colors"
+                            onClick={() => setShowDropdown(false)}
+                        >
+                            Войти
+                        </Link>
+                        <Link
+                            href="/auth/register"
+                            className="flex-1 px-3 py-2 text-xs bg-green-600 hover:bg-green-700 rounded-lg text-white text-center transition-colors"
+                            onClick={() => setShowDropdown(false)}
+                        >
+                            Регистрация
+                        </Link>
+                    </div>
+                </div>
+            )}
+            {authUser && (
+                <div className="p-3 border-b border-zinc-700 space-y-2">
+                    <Link
+                        href="/sync"
+                        className="block w-full px-3 py-2 text-xs bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600 rounded-lg text-blue-400 text-center transition-colors"
+                        onClick={() => setShowDropdown(false)}
+                    >
+                        🔄 Синхронизация данных
+                    </Link>
+                    <button
+                        onClick={async () => {
+                            await signOut();
+                            setShowDropdown(false);
+                        }}
+                        className="w-full px-3 py-2 text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-600 rounded-lg text-red-400 transition-colors"
+                    >
+                        Выйти из облака
+                    </button>
+                </div>
+            )}
 
             {/* User List */}
             {users.length > 0 && (
