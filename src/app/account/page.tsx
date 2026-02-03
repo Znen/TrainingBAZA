@@ -35,6 +35,8 @@ import {
 } from "@/lib/rpgStats";
 import { formatSecondsToTime, shouldUseTimeInput } from "@/lib/timeUtils";
 import { getPercentageWeights } from "@/lib/oneRepMax";
+import { useAuth } from "@/components/AuthProvider";
+import { getCloudProfile, updateCloudProfile, type CloudProfile } from "@/lib/cloudSync";
 
 export default function AccountPage() {
   const list = disciplines as Discipline[];
@@ -60,6 +62,10 @@ export default function AccountPage() {
   const [newChest, setNewChest] = useState("");
   const [newWaist, setNewWaist] = useState("");
   const [newHips, setNewHips] = useState("");
+
+  // Cloud auth
+  const { user: authUser, loading: authLoading } = useAuth();
+  const [cloudProfile, setCloudProfile] = useState<CloudProfile | null>(null);
 
   useEffect(() => {
     let u = loadUsers();
@@ -89,10 +95,25 @@ export default function AccountPage() {
     }
   }, [viewingUserId]);
 
+  // Загрузка облачного профиля
+  useEffect(() => {
+    if (authUser && !authLoading) {
+      getCloudProfile(authUser.id).then(setCloudProfile);
+    } else {
+      setCloudProfile(null);
+    }
+  }, [authUser, authLoading]);
+
   const activeUser = users.find((u) => u.id === activeUserId);
   const viewingUser = users.find((u) => u.id === viewingUserId);
   const isCurrentUserAdmin = isAdmin(activeUser);
   const canEdit = canEditUser(activeUser, viewingUserId);
+
+  // Объединяем облачный и локальный профиль
+  const displayName = cloudProfile?.name || viewingUser?.name || "Гость";
+  const displayAvatar = cloudProfile?.avatar || viewingUser?.avatar;
+  const displayRole = cloudProfile?.role || viewingUser?.role || "user";
+  const isCloudAdmin = cloudProfile?.role === "admin";
 
   const stats = useMemo(() => getUserStats(list, history), [list, history]);
   const overallLevel = useMemo(() => getOverallLevel(stats), [stats]);
@@ -367,8 +388,8 @@ export default function AccountPage() {
             ) : (
               <>
                 <h2 className="text-2xl font-bold text-white mb-1">
-                  {viewingUser?.name ?? "Атлет"}
-                  {viewingUser?.role === "admin" && (
+                  {displayName}
+                  {(displayRole === "admin" || isCloudAdmin) && (
                     <span className="ml-2 text-sm text-yellow-500">Тренер</span>
                   )}
                 </h2>
