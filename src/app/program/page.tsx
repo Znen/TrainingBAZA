@@ -1,6 +1,17 @@
+"use client";
+
 import Link from "next/link";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function ProgramPage() {
+  return (
+    <ProtectedRoute>
+      <ProgramContent />
+    </ProtectedRoute>
+  );
+}
+
+function ProgramContent() {
   return (
     <main>
       {/* Header */}

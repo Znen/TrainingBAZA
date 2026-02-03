@@ -37,8 +37,17 @@ import { formatSecondsToTime, shouldUseTimeInput } from "@/lib/timeUtils";
 import { getPercentageWeights } from "@/lib/oneRepMax";
 import { useAuth } from "@/components/AuthProvider";
 import { getCloudProfile, updateCloudProfile, type CloudProfile } from "@/lib/cloudSync";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function AccountPage() {
+  return (
+    <ProtectedRoute>
+      <AccountContent />
+    </ProtectedRoute>
+  );
+}
+
+function AccountContent() {
   const list = disciplines as Discipline[];
 
   const [users, setUsers] = useState<User[]>([]);

@@ -4,8 +4,8 @@ import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { addCloudResult } from "@/lib/cloudSync";
 import Link from "next/link";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
-// Типы для localStorage данных
 interface LocalResult {
     value: number;
     date: string;
@@ -16,6 +16,14 @@ interface LocalHistoryStore {
 }
 
 export default function SyncPage() {
+    return (
+        <ProtectedRoute>
+            <SyncContent />
+        </ProtectedRoute>
+    );
+}
+
+function SyncContent() {
     const { user, loading } = useAuth();
     const [syncing, setSyncing] = useState(false);
     const [syncResult, setSyncResult] = useState<{ success: number; errors: number } | null>(null);
@@ -72,32 +80,8 @@ export default function SyncPage() {
         }
     };
 
-    if (loading) {
-        return (
-            <div className="text-center py-12">
-                <div className="animate-pulse text-2xl">⏳</div>
-                <p className="text-[var(--text-muted)] mt-2">Загрузка...</p>
-            </div>
-        );
-    }
-
-    if (!user) {
-        return (
-            <div className="card p-6 text-center max-w-md mx-auto">
-                <div className="text-5xl mb-4">🔒</div>
-                <h2 className="text-xl font-semibold mb-2">Требуется авторизация</h2>
-                <p className="text-[var(--text-muted)] mb-4">
-                    Войдите в облачный аккаунт для синхронизации данных
-                </p>
-                <Link
-                    href="/auth/login"
-                    className="inline-block px-6 py-3 bg-[var(--accent)] hover:bg-[var(--accent-hover)] rounded-lg text-white font-medium transition-colors"
-                >
-                    Войти
-                </Link>
-            </div>
-        );
-    }
+    // ProtectedRoute handles loading and auth checks
+    if (!user) return null;
 
     return (
         <div className="max-w-lg mx-auto">
@@ -138,8 +122,8 @@ export default function SyncPage() {
 
                     {syncResult && (
                         <div className={`p-4 rounded-lg ${syncResult.errors > 0
-                                ? "bg-yellow-500/10 border border-yellow-500/30"
-                                : "bg-green-500/10 border border-green-500/30"
+                            ? "bg-yellow-500/10 border border-yellow-500/30"
+                            : "bg-green-500/10 border border-green-500/30"
                             }`}>
                             <p className="font-medium">
                                 {syncResult.errors === 0 ? "✅ Синхронизация завершена!" : "⚠️ Синхронизация завершена с ошибками"}

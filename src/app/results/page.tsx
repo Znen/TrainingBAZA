@@ -36,7 +36,17 @@ type Discipline = {
   icon?: string;
 };
 
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+
 export default function ResultsPage() {
+  return (
+    <ProtectedRoute>
+      <ResultsContent />
+    </ProtectedRoute>
+  );
+}
+
+function ResultsContent() {
   const list = disciplines as Discipline[];
 
   const grouped = useMemo(() => {
