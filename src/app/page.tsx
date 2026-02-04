@@ -322,6 +322,19 @@ export default function Home() {
           </Link>
         </div>
       </nav>
+
+      {/* DEBUG SECTION */}
+      <div className="max-w-lg mx-auto px-4 pb-32 pt-8">
+        <details className="text-[10px] text-zinc-800 font-mono">
+          <summary>Debug Info</summary>
+          <pre className="mt-2 whitespace-pre-wrap">
+            User: {user?.email || 'Guest'}{"\n"}
+            Active Prog: {activeProgram ? activeProgram.id : 'null'}{"\n"}
+            Load Error: {loadError ? 'Yes' : 'No'}{"\n"}
+            Current Date: {new Date().toISOString()}
+          </pre>
+        </details>
+      </div>
     </div>
   );
 }
