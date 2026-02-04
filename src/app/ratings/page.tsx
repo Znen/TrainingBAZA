@@ -279,10 +279,12 @@ export default function RatingsPage() {
         </div>
         <pre className="text-zinc-400">
           Cloud: {isCloudData ? "Active" : "Disabled"}{"\n"}
+          User: {authUser?.email || "guest"}{"\n"}
+          Local Active ID: {activeUserId}{"\n"}
+          Cloud ID: {authUser?.id || "none"}{"\n"}
           Profiles: {debug.profiles}{"\n"}
           Raw Results: {debug.results}{"\n"}
-          Refreshed: {debug.lastFetch || "never"}{"\n"}
-          User: {authUser?.email || "guest"}
+          Refreshed: {debug.lastFetch || "never"}
         </pre>
       </div>
     </main>

@@ -72,11 +72,14 @@ export default function UserSwitcher() {
             activeUser.name === 'Гость' ||
             activeUser.name === 'User';
 
-        // 1. Local -> Cloud (If cloud is empty but local has info)
-        if (isCloudGeneric && !isLocalGeneric) {
-            console.log("Auto-syncing local profile to cloud:", activeUser.name);
+        // 1. Local -> Cloud (If cloud is empty OR cloud has an emoji but local has a photo)
+        const cloudHasEmoji = !cloudProfile.avatar || !isBase64Image(cloudProfile.avatar);
+        const localHasPhoto = activeUser.avatar && isBase64Image(activeUser.avatar);
+
+        if (isCloudGeneric || (cloudHasEmoji && localHasPhoto)) {
+            console.log("Auto-syncing profile to cloud (higher priority local info):", activeUser.name);
             updateCloudProfile(authUser.id, {
-                name: activeUser.name,
+                name: isCloudGeneric ? activeUser.name : cloudProfile.name,
                 avatar: activeUser.avatar,
                 avatar_type: activeUser.avatarType === 'photo' ? 'photo' : 'emoji'
             });
