@@ -349,6 +349,7 @@ function DebugFooter({ user, activeProgram, loadError, viewDate }: any) {
         <div className="mt-2 text-[10px] space-y-2">
           <pre className="whitespace-pre-wrap font-mono text-zinc-300">
             User: {user?.email || 'Guest'}{"\n"}
+            ID: {user?.id || 'none'}{"\n"}
             Refreshed: {new Date().toLocaleTimeString()}{"\n"}
             Active Prog ID: {activeProgram ? activeProgram.id : 'null'}{"\n"}
             Load Error: {loadError ? 'Yes' : 'No'}{"\n"}

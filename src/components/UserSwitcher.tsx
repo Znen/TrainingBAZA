@@ -13,7 +13,7 @@ import {
     isBase64Image,
 } from "@/lib/users";
 import { useAuth } from "@/components/AuthProvider";
-import { getCloudProfile, type CloudProfile } from "@/lib/cloudSync";
+import { getCloudProfile, updateCloudProfile, type CloudProfile } from "@/lib/cloudSync";
 
 // Хелпер для рендеринга аватара (эмодзи или фото)
 function renderAvatar(avatar: string | undefined, size: "sm" | "lg" = "sm") {
@@ -44,6 +44,8 @@ export default function UserSwitcher() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
 
+    const activeUser = users.find((u) => u.id === activeUserId);
+
     // Supabase auth
     const { user: authUser, loading: authLoading, signOut } = useAuth();
     const [cloudProfile, setCloudProfile] = useState<CloudProfile | null>(null);
@@ -56,6 +58,37 @@ export default function UserSwitcher() {
             setCloudProfile(null);
         }
     }, [authUser, authLoading]);
+
+    // Sync local profile to cloud if cloud is empty/generic
+    useEffect(() => {
+        // Only sync if we have both and cloud name looks like a default/email-based one
+        if (authUser && cloudProfile && activeUser && !authLoading) {
+            const isGenericName = !cloudProfile.name ||
+                cloudProfile.name === 'User' ||
+                cloudProfile.name === authUser.email?.split('@')[0];
+
+            const hasCustomLocalName = activeUser.name &&
+                activeUser.name !== 'Гость' &&
+                activeUser.name !== 'Тренер' &&
+                activeUser.name !== 'User';
+
+            if (isGenericName && hasCustomLocalName) {
+                console.log("Auto-syncing local name to cloud:", activeUser.name);
+                updateCloudProfile(authUser.id, {
+                    name: activeUser.name,
+                    avatar: activeUser.avatar,
+                    avatar_type: activeUser.avatarType === 'photo' ? 'photo' : 'emoji'
+                });
+
+                // Optimistic update to UI
+                setCloudProfile(prev => prev ? {
+                    ...prev,
+                    name: activeUser.name,
+                    avatar: activeUser.avatar || null
+                } : null);
+            }
+        }
+    }, [authUser, cloudProfile, activeUser, authLoading]);
 
     useEffect(() => {
         setMounted(true);
@@ -102,7 +135,7 @@ export default function UserSwitcher() {
         };
     }, [showDropdown]);
 
-    const activeUser = users.find((u) => u.id === activeUserId);
+
 
     // Determine display properties
     // If authenticated: use cloud profile
