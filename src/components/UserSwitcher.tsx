@@ -10,6 +10,7 @@ import {
     loadActiveUserId,
     saveActiveUserId,
     createUser,
+    updateUser,
     isBase64Image,
 } from "@/lib/users";
 import { useAuth } from "@/components/AuthProvider";
@@ -59,34 +60,51 @@ export default function UserSwitcher() {
         }
     }, [authUser, authLoading]);
 
-    // Sync local profile to cloud if cloud is empty/generic
+    // Sync profile between Local and Cloud
     useEffect(() => {
-        // Only sync if we have both and cloud name looks like a default/email-based one
-        if (authUser && cloudProfile && activeUser && !authLoading) {
-            const isGenericName = !cloudProfile.name ||
-                cloudProfile.name === 'User' ||
-                cloudProfile.name === authUser.email?.split('@')[0];
+        if (!authUser || !cloudProfile || !activeUser || authLoading) return;
 
-            const hasCustomLocalName = activeUser.name &&
-                activeUser.name !== 'Гость' &&
-                activeUser.name !== 'Тренер' &&
-                activeUser.name !== 'User';
+        const isCloudGeneric = !cloudProfile.name ||
+            cloudProfile.name === 'User' ||
+            cloudProfile.name === authUser.email?.split('@')[0];
 
-            if (isGenericName && hasCustomLocalName) {
-                console.log("Auto-syncing local name to cloud:", activeUser.name);
-                updateCloudProfile(authUser.id, {
-                    name: activeUser.name,
-                    avatar: activeUser.avatar,
-                    avatar_type: activeUser.avatarType === 'photo' ? 'photo' : 'emoji'
-                });
+        const isLocalGeneric = !activeUser.name ||
+            activeUser.name === 'Гость' ||
+            activeUser.name === 'User';
 
-                // Optimistic update to UI
-                setCloudProfile(prev => prev ? {
-                    ...prev,
-                    name: activeUser.name,
-                    avatar: activeUser.avatar || null
-                } : null);
-            }
+        // 1. Local -> Cloud (If cloud is empty but local has info)
+        if (isCloudGeneric && !isLocalGeneric) {
+            console.log("Auto-syncing local profile to cloud:", activeUser.name);
+            updateCloudProfile(authUser.id, {
+                name: activeUser.name,
+                avatar: activeUser.avatar,
+                avatar_type: activeUser.avatarType === 'photo' ? 'photo' : 'emoji'
+            });
+
+            setCloudProfile(prev => prev ? {
+                ...prev,
+                name: activeUser.name,
+                avatar: activeUser.avatar || null,
+                avatar_type: activeUser.avatarType === 'photo' ? 'photo' : 'emoji'
+            } : null);
+        }
+
+        // 2. Cloud -> Local (If local is empty or uses outdated avatar while cloud has a photo)
+        // We sync cloud name/avatar to local record so user sees it even if offline later
+        const cloudHasPhoto = cloudProfile.avatar_type === 'photo' && cloudProfile.avatar;
+        const localNeedsUpdate = isLocalGeneric ||
+            (cloudHasPhoto && activeUser.avatar !== cloudProfile.avatar) ||
+            (cloudProfile.name && activeUser.name !== cloudProfile.name);
+
+        if (localNeedsUpdate && !isCloudGeneric) {
+            console.log("Syncing cloud profile to local:", cloudProfile.name);
+            const updated = updateUser(users, activeUserId, {
+                name: cloudProfile.name || activeUser.name,
+                avatar: cloudProfile.avatar || activeUser.avatar,
+                avatarType: (cloudProfile.avatar_type as any) || activeUser.avatarType
+            });
+            setUsers(updated);
+            saveUsers(updated);
         }
     }, [authUser, cloudProfile, activeUser, authLoading]);
 

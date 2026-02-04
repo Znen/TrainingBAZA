@@ -155,15 +155,42 @@ function AccountContent() {
   }, [filteredAchievements]);
 
   // Обработчики
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     if (!viewingUser || !canEdit) return;
+
+    const newName = editName || viewingUser.name;
+    const newAvatar = editAvatar || viewingUser.avatar;
+    const newAvatarType = editAvatarType;
+
+    // 1. Update local
     const updated = updateUser(users, viewingUserId, {
-      name: editName || viewingUser.name,
-      avatar: editAvatar || viewingUser.avatar,
-      avatarType: editAvatarType,
+      name: newName,
+      avatar: newAvatar,
+      avatarType: newAvatarType,
     });
     setUsers(updated);
     saveUsers(updated);
+
+    // 2. Push to cloud if it's the current user's profile
+    if (authUser && viewingUserId === authUser.id) {
+      try {
+        await updateCloudProfile(authUser.id, {
+          name: newName,
+          avatar: newAvatar,
+          avatar_type: newAvatarType === 'photo' ? 'photo' : 'emoji'
+        });
+        // Update local cloudProfile state to match
+        setCloudProfile(prev => prev ? {
+          ...prev,
+          name: newName,
+          avatar: newAvatar || null,
+          avatar_type: newAvatarType
+        } : null);
+      } catch (err) {
+        console.error("Failed to sync profile to cloud:", err);
+      }
+    }
+
     setIsEditingProfile(false);
   };
 
