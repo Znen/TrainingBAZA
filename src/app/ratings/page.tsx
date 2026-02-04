@@ -18,8 +18,11 @@ import {
   calculateDisciplineRating,
   calculateOverallRating,
 } from "@/lib/ratings";
+import { getAllCloudResults, getAllCloudProfiles } from "@/lib/cloudSync";
+import { useAuth } from "@/components/AuthProvider";
 
 export default function RatingsPage() {
+  const { user: authUser, loading: authLoading } = useAuth();
   const list = disciplines as Discipline[];
 
   const grouped = useMemo(() => {
@@ -41,24 +44,73 @@ export default function RatingsPage() {
   const [activeUserId, setActiveUserId] = useState<string>("");
   const [store, setStore] = useState<HistoryStore>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  const [isCloudData, setIsCloudData] = useState(false);
 
   useEffect(() => {
-    let u = loadUsers();
-    if (u.length === 0) {
-      const created = createUser("User 1");
-      u = [created];
-      saveUsers(u);
+    async function load() {
+      // 1. Try cloud if logged in
+      if (authUser) {
+        try {
+          const [cloudProfiles, cloudResults] = await Promise.all([
+            getAllCloudProfiles(),
+            getAllCloudResults()
+          ]);
+
+          if (cloudProfiles.length > 0) {
+            const mappedUsers: User[] = cloudProfiles.map(p => ({
+              id: p.id,
+              name: p.name,
+              role: p.role as any,
+              avatar: p.avatar || undefined,
+              avatarType: p.avatar_type as any
+            }));
+
+            const mappedStore: HistoryStore = {};
+            cloudResults.forEach(r => {
+              if (!mappedStore[r.user_id]) mappedStore[r.user_id] = {};
+              if (!mappedStore[r.user_id][r.discipline_slug]) {
+                mappedStore[r.user_id][r.discipline_slug] = [];
+              }
+              mappedStore[r.user_id][r.discipline_slug].push({
+                ts: r.recorded_at,
+                value: r.value
+              });
+            });
+
+            setUsers(mappedUsers);
+            setStore(mappedStore);
+            setActiveUserId(authUser.id);
+            setIsCloudData(true);
+            return; // Success, exit
+          }
+        } catch (err) {
+          console.error("Cloud ratings error:", err);
+        }
+      }
+
+      // 2. Fallback to local
+      let u = loadUsers();
+      if (u.length === 0) {
+        const created = createUser("User 1");
+        u = [created];
+        saveUsers(u);
+      }
+      setUsers(u);
+
+      const savedActive = loadActiveUserId();
+      const initialActive = savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id;
+      setActiveUserId(initialActive);
+      saveActiveUserId(initialActive);
+
+      const s = loadHistoryStore(initialActive);
+      setStore(s);
+      setIsCloudData(false);
     }
-    setUsers(u);
 
-    const savedActive = loadActiveUserId();
-    const initialActive = savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id;
-    setActiveUserId(initialActive);
-    saveActiveUserId(initialActive);
-
-    const s = loadHistoryStore(initialActive);
-    setStore(s);
-  }, []);
+    if (!authLoading) {
+      load();
+    }
+  }, [authUser, authLoading]);
 
   const latest = useMemo(() => {
     const out: Record<string, Record<string, HistoryItem | null>> = {};
