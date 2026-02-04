@@ -355,6 +355,13 @@ function DebugFooter({ user, activeProgram, loadError, viewDate }: any) {
             View Date: {viewDate.toISOString().split('T')[0]}
           </pre>
 
+          <div className="border-t border-zinc-600 pt-2 mb-2">
+            <p className="font-bold text-zinc-400">Connection:</p>
+            <span className="font-mono text-zinc-500">
+              URL: {process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 20)}...
+            </span>
+          </div>
+
           <div className="border-t border-zinc-600 pt-2">
             <p className="font-bold text-zinc-400 mb-1">Visible Programs (Raw DB Check):</p>
             {allPrograms.length === 0 ? (
