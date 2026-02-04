@@ -36,11 +36,14 @@ function ProgramAdminContent() {
   const loadPrograms = async () => {
     setLoading(true);
     try {
+      console.log("DEBUG: loadPrograms starting fetch...");
       const data = await getPrograms();
+      console.log("DEBUG: loadPrograms data received:", data.length);
       setPrograms(data);
     } catch (e: any) {
-      console.error(e);
-      alert(`Ошибка загрузки программ: ${e.message || JSON.stringify(e)}`);
+      console.error("DEBUG: loadPrograms error object:", e);
+      const errorStr = (e instanceof Error) ? e.message : JSON.stringify(e);
+      alert(`Ошибка загрузки программ: ${errorStr}`);
     } finally {
       setLoading(false);
     }
@@ -150,6 +153,46 @@ function ProgramAdminContent() {
             Нет созданных программ
           </div>
         )}
+      </div>
+
+      {/* DEBUG SECTION */}
+      <div className="max-w-lg mx-auto mt-12 px-4 pb-12">
+        <details className="text-[10px] text-zinc-800 font-mono bg-zinc-950 p-3 rounded border border-zinc-900">
+          <summary className="cursor-pointer text-zinc-500 mb-2">System Debug (Admin)</summary>
+          <div className="space-y-2">
+            <pre className="whitespace-pre-wrap">
+              URL Prefix: {process.env.NEXT_PUBLIC_SUPABASE_URL?.slice(0, 15)}...{"\n"}
+              User Status: {user ? `Logged in (${user.email})` : 'Not logged in'}{"\n"}
+              Loading: {loading ? 'Yes' : 'No'}{"\n"}
+              Program Count: {programs.length}{"\n"}
+              Device Time: {new Date().toLocaleTimeString()}
+            </pre>
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => loadPrograms()}
+                className="bg-zinc-900 px-2 py-1 rounded text-zinc-400 border border-zinc-800"
+              >
+                [Retry Load]
+              </button>
+              <button
+                onClick={async () => {
+                  try {
+                    const { supabase } = await import("@/lib/supabase");
+                    const { data, error } = await supabase.from('programs').select('id, title');
+                    if (error) throw error;
+                    alert(`Manual Fetch SUCCESS: Found ${data?.length} programs`);
+                  } catch (err: any) {
+                    alert(`Manual Fetch FAILED: ${err.message || JSON.stringify(err)}`);
+                  }
+                }}
+                className="bg-zinc-900 px-2 py-1 rounded text-yellow-900 border border-yellow-900/20"
+              >
+                [DEBUG: Manual Fetch]
+              </button>
+            </div>
+          </div>
+        </details>
       </div>
 
       {/* CREATE MODAL */}
