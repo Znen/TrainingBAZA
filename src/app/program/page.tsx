@@ -38,9 +38,9 @@ function ProgramAdminContent() {
     try {
       const data = await getPrograms();
       setPrograms(data);
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert("Ошибка загрузки программ");
+      alert(`Ошибка загрузки программ: ${e.message || JSON.stringify(e)}`);
     } finally {
       setLoading(false);
     }
