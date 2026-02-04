@@ -262,64 +262,10 @@ export default function UserSwitcher() {
             {/* Divider */}
             <div className="border-t border-zinc-700" />
 
-            {/* Register/Login Section */}
-            {!showRegister ? (
-                <div className="p-3">
-                    <button
-                        type="button"
-                        onClick={() => setShowRegister(true)}
-                        className="w-full px-4 py-2 text-sm text-center bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
-                    >
-                        ➕ Регистрация / Вход
-                    </button>
-                </div>
-            ) : (
-                <div className="p-4 space-y-3">
-                    <div>
-                        <label className="text-xs text-zinc-400 block mb-1">Имя</label>
-                        <input
-                            type="text"
-                            value={registerName}
-                            onChange={(e) => setRegisterName(e.target.value)}
-                            placeholder="Ваше имя"
-                            className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-white text-sm focus:border-blue-500 focus:outline-none"
-                        />
-                    </div>
-                    <div>
-                        <label className="text-xs text-zinc-400 block mb-1">Email (опционально)</label>
-                        <input
-                            type="email"
-                            value={registerEmail}
-                            onChange={(e) => setRegisterEmail(e.target.value)}
-                            placeholder="email@example.com"
-                            className="w-full px-3 py-2 rounded-lg bg-zinc-800 border border-zinc-600 text-white text-sm focus:border-blue-500 focus:outline-none"
-                        />
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            type="button"
-                            onClick={handleRegister}
-                            className="flex-1 px-3 py-2 text-sm bg-green-600 hover:bg-green-700 rounded-lg text-white transition-colors"
-                        >
-                            Создать
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleLogin}
-                            className="flex-1 px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 rounded-lg text-white transition-colors"
-                        >
-                            Войти
-                        </button>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => setShowRegister(false)}
-                        className="w-full text-xs text-zinc-400 hover:text-white transition-colors"
-                    >
-                        Отмена
-                    </button>
-                </div>
-            )}
+            {/* Register/Login Section - REMOVED LEGACY LOCAL AUTH */}
+            {/* If you want to add local profiles, use a different mechanism. 
+                For now, we rely on Supabase Auth. */
+            }
         </div>
     ) : null;
 
