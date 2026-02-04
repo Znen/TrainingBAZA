@@ -46,25 +46,9 @@ function ProgramAdminContent() {
     }
   };
 
-  const handleCreateProgram = async () => {
-    const title = prompt("Название программы (например 'Весна 2026')");
-    if (!title) return;
-
-    // Default start date: next Monday
-    const nextMonday = new Date();
-    nextMonday.setDate(nextMonday.getDate() + ((1 + 7 - nextMonday.getDay()) % 7));
-    const defaultDate = nextMonday.toISOString().split('T')[0];
-
-    const dateStr = prompt("Дата начала (YYYY-MM-DD)", defaultDate);
-    if (!dateStr) return;
-
-    try {
-      await createProgram(title, dateStr);
-      loadPrograms();
-    } catch (e) {
-      alert("Ошибка создания");
-    }
-  };
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newProgramTitle, setNewProgramTitle] = useState("");
+  const [newProgramDate, setNewProgramDate] = useState("");
 
   const handleDeleteProgram = async (id: string) => {
     if (!confirm("Удалить программу?")) return;
@@ -76,32 +60,44 @@ function ProgramAdminContent() {
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Загрузка...</div>;
+  const content = (() => {
+    if (loading) return <div className="p-8 text-center">Загрузка...</div>;
+    // Editor View
+    if (selectedProgramId) {
+      return (
+        <main className="max-w-4xl mx-auto p-4 pb-24">
+          <ProgramEditor
+            programId={selectedProgramId}
+            onClose={() => {
+              setSelectedProgramId(null);
+              loadPrograms();
+            }}
+          />
+        </main>
+      );
+    }
+    return null;
+  })();
 
-  // Editor View
-  if (selectedProgramId) {
-    return (
-      <main className="max-w-4xl mx-auto p-4 pb-24">
-        <ProgramEditor
-          programId={selectedProgramId}
-          onClose={() => {
-            setSelectedProgramId(null);
-            loadPrograms();
-          }}
-        />
-      </main>
-    );
-  }
+  if (content) return content;
 
+  // Render List
   return (
-    <main className="max-w-4xl mx-auto p-4 pb-24">
+    <main className="max-w-4xl mx-auto p-4 pb-24 relative">
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-2xl font-bold">Управление программами</h1>
           <p className="text-zinc-400">Создание и редактирование циклов</p>
         </div>
         <button
-          onClick={handleCreateProgram}
+          onClick={() => {
+            // Set default date to next Monday
+            const nextMonday = new Date();
+            nextMonday.setDate(nextMonday.getDate() + ((1 + 7 - nextMonday.getDay()) % 7));
+            setNewProgramDate(nextMonday.toISOString().split('T')[0]);
+            setNewProgramTitle("");
+            setShowCreateModal(true);
+          }}
           className="btn btn-primary"
         >
           + Новая программа
@@ -155,6 +151,63 @@ function ProgramAdminContent() {
           </div>
         )}
       </div>
+
+      {/* CREATE MODAL */}
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 w-full max-w-sm shadow-2xl">
+            <h3 className="text-xl font-bold mb-4">Новая программа</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Название</label>
+                <input
+                  type="text"
+                  value={newProgramTitle}
+                  onChange={e => setNewProgramTitle(e.target.value)}
+                  placeholder="Например: Весна 2026"
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-zinc-400 mb-1">Дата начала (Понедельник)</label>
+                <input
+                  type="date"
+                  value={newProgramDate}
+                  onChange={e => setNewProgramDate(e.target.value)}
+                  className="w-full bg-zinc-800 border border-zinc-600 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
+                >
+                  Отмена
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!newProgramTitle || !newProgramDate) return;
+                    try {
+                      await createProgram(newProgramTitle, newProgramDate);
+                      setShowCreateModal(false);
+                      loadPrograms();
+                    } catch (e) {
+                      alert("Ошибка при создании");
+                    }
+                  }}
+                  className="flex-1 py-2 text-sm bg-blue-600 hover:bg-blue-500 rounded-lg transition-colors font-medium"
+                >
+                  Создать
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
