@@ -157,7 +157,7 @@ export function calculateOverallRating(
             j++;
         }
         for (let k = i; k < j; k++) {
-            rows[k].place = currentPlace;
+            rows[k].place = rows[k].points > 0 ? currentPlace : 0;
         }
         currentPlace += j - i;
         i = j;

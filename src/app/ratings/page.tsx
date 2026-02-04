@@ -14,7 +14,6 @@ import { HistoryStore, loadHistoryStore, getLatest, HistoryItem } from "@/lib/re
 import {
   Discipline,
   DisciplineRow,
-  OverallRow,
   calculateDisciplineRating,
   calculateOverallRating,
 } from "@/lib/ratings";
@@ -73,7 +72,7 @@ export default function RatingsPage() {
               }
               mappedStore[r.user_id][r.discipline_slug].push({
                 ts: r.recorded_at,
-                value: r.value
+                value: Number(r.value)
               });
             });
 
@@ -148,7 +147,7 @@ export default function RatingsPage() {
       <div className="page-header">
         <div>
           <h1 className="page-title">🏆 Рейтинги</h1>
-          <p className="page-subtitle">Сравнение результатов участников</p>
+          <p className="page-subtitle">Сравнение результатов участников {isCloudData && "(Облако)"}</p>
         </div>
       </div>
 
@@ -175,14 +174,17 @@ export default function RatingsPage() {
                   className={row.userId === activeUserId ? "bg-[var(--accent-primary)]/10" : ""}
                 >
                   <td className="font-medium">
-                    {row.place === 1 && "🥇"}
-                    {row.place === 2 && "🥈"}
-                    {row.place === 3 && "🥉"}
-                    {row.place && row.place > 3 && `#${row.place}`}
-                    {!row.place && "—"}
+                    {row.place > 0 ? (
+                      <>
+                        {row.place === 1 && "🥇"}
+                        {row.place === 2 && "🥈"}
+                        {row.place === 3 && "🥉"}
+                        {row.place > 3 && `#${row.place}`}
+                      </>
+                    ) : "—"}
                   </td>
                   <td>{row.userName}</td>
-                  <td className="text-right font-mono">{row.points}</td>
+                  <td className="text-right font-mono">{row.points || 0}</td>
                 </tr>
               ))}
             </tbody>
