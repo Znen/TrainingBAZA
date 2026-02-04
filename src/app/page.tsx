@@ -324,18 +324,54 @@ export default function Home() {
       </nav>
 
       {/* DEBUG SECTION */}
-      <div className="max-w-lg mx-auto px-4 pb-32 pt-8 relative z-40">
-        <details className="text-xs text-white bg-zinc-800 p-2 rounded border border-zinc-700">
-          <summary className="cursor-pointer font-bold text-yellow-500">🐞 DEBUG INFO (Click me)</summary>
-          <pre className="mt-2 whitespace-pre-wrap font-mono text-[10px] text-zinc-300">
+      <DebugFooter user={user} activeProgram={activeProgram} loadError={loadError} viewDate={viewDate} />
+    </div>
+  );
+}
+
+function DebugFooter({ user, activeProgram, loadError, viewDate }: any) {
+  const [allPrograms, setAllPrograms] = useState<any[]>([]);
+
+  useEffect(() => {
+    // Raw fetch of all programs to check RLS visibility
+    import("@/lib/supabase").then(({ supabase }) => {
+      supabase.from('programs').select('*').then(({ data, error }) => {
+        if (data) setAllPrograms(data);
+        if (error) console.error("Debug fetch error:", error);
+      });
+    });
+  }, []);
+
+  return (
+    <div className="max-w-lg mx-auto px-4 pb-32 pt-8 relative z-40">
+      <details className="text-xs text-white bg-zinc-800 p-2 rounded border border-zinc-700">
+        <summary className="cursor-pointer font-bold text-yellow-500">🐞 DEBUG INFO (Click me)</summary>
+        <div className="mt-2 text-[10px] space-y-2">
+          <pre className="whitespace-pre-wrap font-mono text-zinc-300">
             User: {user?.email || 'Guest'}{"\n"}
             Refreshed: {new Date().toLocaleTimeString()}{"\n"}
             Active Prog ID: {activeProgram ? activeProgram.id : 'null'}{"\n"}
             Load Error: {loadError ? 'Yes' : 'No'}{"\n"}
             View Date: {viewDate.toISOString().split('T')[0]}
           </pre>
-        </details>
-      </div>
+
+          <div className="border-t border-zinc-600 pt-2">
+            <p className="font-bold text-zinc-400 mb-1">Visible Programs (Raw DB Check):</p>
+            {allPrograms.length === 0 ? (
+              <p className="text-red-400">0 programs found (Table empty or RLS blocking)</p>
+            ) : (
+              <ul className="space-y-1">
+                {allPrograms.map(p => (
+                  <li key={p.id} className="font-mono text-zinc-400">
+                    [{p.is_active ? 'ACTIVE' : 'OFF'}] {p.title} <br />
+                    <span className="opacity-50 text-[9px]">ID: {p.id.slice(0, 8)}...</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
