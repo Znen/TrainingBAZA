@@ -72,13 +72,20 @@ export async function getFullProgramById(id: string): Promise<FullProgram | null
 }
 
 export async function getActiveProgram(): Promise<FullProgram | null> {
-    const { data: program, error } = await supabase
+    const { data: programs, error } = await supabase
         .from("programs")
         .select("*")
         .eq("is_active", true)
-        .single();
+        .order("created_at", { ascending: false }) // Prefer newest
+        .limit(1);
 
-    if (error || !program) return null;
+    if (error) {
+        console.error("Error fetching active program:", error);
+        return null;
+    }
+
+    const program = programs?.[0];
+    if (!program) return null;
 
     const { data: fullData, error: deepError } = await supabase
         .from("cycles")
