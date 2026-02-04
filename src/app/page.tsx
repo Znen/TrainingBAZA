@@ -1,423 +1,320 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import disciplines from "../../disciplines.json";
-import {
-  Phase,
-  DEFAULT_PHASES,
-  moscowDateYmd,
-  isTrainingDay,
-  workoutIndexFromStart,
-  phaseForWorkout,
-  getMonthInfo,
-  loadCycleStartYmd,
-  saveCycleStartYmd,
-  loadPhases,
-  savePhases,
-} from "@/lib/program";
-import { loadFeed, saveFeed, addFeedItem as addFeedItemLib, FeedItem } from "@/lib/feed";
-import { safeId } from "@/lib/users";
-
-type Discipline = {
-  slug: string;
-  category: string;
-  name: string;
-  unit?: string;
-  direction?: "lower_better" | "higher_better";
-  stat?: string;
-  has1RM?: boolean;
-  icon?: string;
-};
+import { useEffect, useState, useMemo } from "react";
+import Link from "next/link";
+import { useAuth } from "@/components/AuthProvider";
+import UserSwitcher from "@/components/UserSwitcher";
+import { getActiveProgram } from "@/lib/programApi";
+import { FullProgram, Workout } from "@/types/program";
+import { getWorkoutIndexForDate, getPhaseForDate } from "@/lib/programUtils";
+import { getDailyQuote } from "@/lib/quotes";
+import { addDays, subDays, startOfWeek, isSameDay, format, addWeeks, subWeeks } from "date-fns";
+import { ru } from "date-fns/locale";
 
 export default function Home() {
-  const list = disciplines as Discipline[];
+  const { user } = useAuth();
+  const [activeProgram, setActiveProgram] = useState<FullProgram | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [quote, setQuote] = useState("");
 
-  const disciplineOptions = useMemo(
-    () => [{ slug: "", name: "Без дисциплины" }, ...list.map((d) => ({ slug: d.slug, name: d.name }))],
-    [list]
-  );
+  // Anchor date for the visible week grid (always Monday of the visible week)
+  const [viewDate, setViewDate] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  const todayYmd = useMemo(() => moscowDateYmd(), []);
-
-  const [cycleStartYmd, setCycleStartYmd] = useState<string>(todayYmd);
-  const [phases, setPhases] = useState<Phase[]>(DEFAULT_PHASES);
-  const [phasesDraft, setPhasesDraft] = useState<string>(JSON.stringify(DEFAULT_PHASES, null, 2));
-  const [showPhasesEditor, setShowPhasesEditor] = useState(false);
-
-  const [selectedYmd, setSelectedYmd] = useState<string>(todayYmd);
-
-  const [feed, setFeed] = useState<FeedItem[]>([]);
-  const [feedDate, setFeedDate] = useState<string>(() => todayYmd);
-  const [feedTitle, setFeedTitle] = useState<string>("");
-  const [feedVideoUrl, setFeedVideoUrl] = useState<string>("");
-  const [feedDisciplineSlug, setFeedDisciplineSlug] = useState<string>("");
-
-  const monthInfo = useMemo(() => getMonthInfo(selectedYmd, todayYmd), [selectedYmd, todayYmd]);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
-    const savedStart = loadCycleStartYmd();
-    if (savedStart) setCycleStartYmd(savedStart);
-
-    const p = loadPhases();
-    setPhases(p);
-    setPhasesDraft(JSON.stringify(p, null, 2));
-
-    setFeed(loadFeed());
+    setQuote(getDailyQuote());
+    async function load() {
+      try {
+        const prog = await getActiveProgram();
+        setActiveProgram(prog);
+      } catch (e) {
+        console.error(e);
+        setLoadError(true);
+      }
+    }
+    load();
   }, []);
 
-  const todayWorkoutIndex = useMemo(() => workoutIndexFromStart(cycleStartYmd, todayYmd), [cycleStartYmd, todayYmd]);
-  const selectedWorkoutIndex = useMemo(
-    () => workoutIndexFromStart(cycleStartYmd, selectedYmd),
-    [cycleStartYmd, selectedYmd]
-  );
+  // Ensure selectedDate is visible when it changes (optional, but good UX)
+  // useEffect(() => {
+  //   const start = startOfWeek(selectedDate, { weekStartsOn: 1 });
+  //   setViewDate(start);
+  // }, [selectedDate]);
 
-  const todayPhase = useMemo(() => phaseForWorkout(phases, todayWorkoutIndex), [phases, todayWorkoutIndex]);
-  const selectedPhase = useMemo(() => phaseForWorkout(phases, selectedWorkoutIndex), [phases, selectedWorkoutIndex]);
+  // --- Helpers for Display ---
 
-  const addFeedItem = () => {
-    const title = feedTitle.trim();
-    const url = feedVideoUrl.trim();
-    const dateYmd = feedDate.trim();
+  const workoutsMap = useMemo(() => {
+    if (!activeProgram) return new Map<number, Workout>();
 
-    if (!title || !url || !dateYmd) return;
+    const map = new Map<number, any>();
+    let globalIndex = 0;
 
-    const item: FeedItem = {
-      id: safeId(),
-      date: dateYmd,
-      type: "video_achievement",
-      userId: "dev",
-      title,
-      videoUrl: url,
-      disciplineSlug: feedDisciplineSlug || undefined,
-      createdAtUtc: new Date().toISOString(),
-    };
-
-    const updated = addFeedItemLib(item);
-    setFeed(updated);
-
-    setFeedTitle("");
-    setFeedVideoUrl("");
-    setFeedDisciplineSlug("");
-  };
-
-  const removeFeedItem = (id: string) => {
-    setFeed((prev) => {
-      const next = prev.filter((x) => x.id !== id);
-      saveFeed(next);
-      return next;
+    activeProgram.cycles.forEach(cycle => {
+      cycle.phases.forEach(phase => {
+        phase.workouts.forEach(workout => {
+          map.set(globalIndex, { ...workout, cycleTitle: cycle.title, phaseTitle: phase.title, cycleColor: cycle.color });
+          globalIndex++;
+        });
+      });
     });
-  };
+    return map;
+  }, [activeProgram]);
 
-  const applyPhasesDraft = () => {
-    try {
-      const parsed = JSON.parse(phasesDraft) as Phase[];
-      if (!Array.isArray(parsed) || parsed.length === 0) return;
+  const selectedWorkout = useMemo(() => {
+    if (!activeProgram) return null;
+    const startDate = new Date(activeProgram.start_date);
+    const index = getWorkoutIndexForDate(startDate, selectedDate);
+    return index !== -1 ? workoutsMap.get(index) : null;
+  }, [activeProgram, workoutsMap, selectedDate]);
 
-      const cleaned = parsed
-        .map((p) => ({
-          name: typeof p?.name === "string" ? p.name : "Фаза",
-          workouts: Number.isFinite(Number(p?.workouts)) ? Number(p.workouts) : 0,
-        }))
-        .filter((p) => p.workouts > 0);
+  // Determine current phase/cycle info for the HEADER
+  const currentPhaseInfo = useMemo(() => {
+    if (!activeProgram) return null;
+    return getPhaseForDate(activeProgram, selectedDate);
+  }, [activeProgram, selectedDate]);
 
-      if (cleaned.length === 0) return;
 
-      setPhases(cleaned);
-      savePhases(cleaned);
-      setShowPhasesEditor(false);
-    } catch {
-      // ignore
+  // Generate 21 days for the Grid (3 weeks)
+  const gridDays = useMemo(() => {
+    const dates = [];
+    // viewDate is Monday of the MIDDLE week
+    const start = subWeeks(viewDate, 1);
+    for (let i = 0; i < 21; i++) {
+      dates.push(addDays(start, i));
     }
-  };
+    return dates;
+  }, [viewDate]);
+
+  const handlePrevWeek = () => setViewDate(subWeeks(viewDate, 1));
+  const handleNextWeek = () => setViewDate(addWeeks(viewDate, 1));
+
+  if (loadError) return <div className="p-4 text-red-500">Ошибка загрузки программы</div>;
 
   return (
-    <main className="space-y-6">
-      {/* ═══════════════════════════════════════════════════════════════
-          CALENDAR — Glass Panel with Animated Border
-          ═══════════════════════════════════════════════════════════════ */}
-      <section className="glass-panel glow-effect">
-        {/* Header */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight">📅 Календарь программы</h2>
-            <p className="mt-1 text-sm text-[var(--text-muted)]">
-              Пн/Ср/Пт • Слоты 09:00 / 19:00 / 20:30 • Europe/Moscow
-            </p>
-          </div>
+    <div className="min-h-screen pb-24 pt-safe bg-black text-white selection:bg-yellow-500/30">
 
-          {/* Controls */}
-          <div className="flex flex-wrap items-end gap-3">
-            <div>
-              <div className="text-xs text-[var(--text-muted)] mb-1">Старт цикла</div>
-              <input
-                className="tech-input w-40"
-                type="date"
-                value={cycleStartYmd}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  setCycleStartYmd(v);
-                  saveCycleStartYmd(v);
-                }}
-              />
-            </div>
+      {/* Top Bar */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-white/5">
+        <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto w-full">
+          <h1 className="text-lg font-bold tracking-tighter uppercase italic">Training<span className="text-yellow-500">Baza</span></h1>
+          <UserSwitcher />
+        </div>
+      </header>
 
-            <div>
-              <div className="text-xs text-[var(--text-muted)] mb-1">Выбрано</div>
-              <input
-                className="tech-input w-40"
-                type="date"
-                value={selectedYmd}
-                onChange={(e) => setSelectedYmd(e.target.value)}
-              />
-            </div>
+      <main className="max-w-lg mx-auto px-4 pt-16">
 
-            <button
-              className="tech-btn"
-              onClick={() => setShowPhasesEditor((v) => !v)}
-              type="button"
-            >
-              ⚙️ Фазы
-            </button>
-          </div>
+        {/* DAILY QUOTE */}
+        <div className="mb-6 opacity-40 select-none">
+          <p className="text-[10px] font-mono leading-tight uppercase tracking-wide text-justify text-zinc-500 border-l border-zinc-800 pl-3">
+            {quote}
+          </p>
         </div>
 
-        {/* Phases Editor */}
-        {showPhasesEditor && (
-          <div className="glass-panel mb-6 p-4">
-            <div className="text-sm font-semibold mb-2">Редактор фаз (JSON)</div>
-            <textarea
-              className="tech-input h-32 font-mono text-xs"
-              value={phasesDraft}
-              onChange={(e) => setPhasesDraft(e.target.value)}
+        {/* ACTIVE PHASE HEADER */}
+        {activeProgram && currentPhaseInfo?.cycle ? (
+          <div className="mb-4 relative overflow-hidden rounded-none border-l-2 border-yellow-500 pl-4 py-2 group">
+            {/* Glow effect based on cycle color */}
+            <div
+              className="absolute inset-0 opacity-10 blur-xl pointer-events-none"
+              style={{ backgroundColor: currentPhaseInfo.color || '#fff' }}
             />
-            <div className="mt-3 flex gap-2">
-              <button className="tech-btn" onClick={applyPhasesDraft} type="button">
-                Применить
-              </button>
-              <button
-                className="btn btn-ghost"
-                onClick={() => {
-                  setPhases(DEFAULT_PHASES);
-                  setPhasesDraft(JSON.stringify(DEFAULT_PHASES, null, 2));
-                  savePhases(DEFAULT_PHASES);
-                }}
-                type="button"
-              >
-                Сбросить
-              </button>
+
+            <div className="relative z-10 flex justify-between items-start">
+              <div>
+                <div className="text-[9px] font-bold tracking-[0.2em] uppercase text-zinc-500 mb-0.5">
+                  Текущий цикл
+                </div>
+                <h2 className="text-xl font-black uppercase italic leading-none" style={{ color: currentPhaseInfo.color || 'white' }}>
+                  {currentPhaseInfo.cycle.title}
+                </h2>
+                <p className="text-zinc-500 text-[10px] font-mono mt-0.5 uppercase">
+                  {currentPhaseInfo.phase?.title}
+                </p>
+              </div>
+
+              {/* Admin Link */}
+              <Link href="/program" className="opacity-0 group-hover:opacity-100 transition-opacity p-2 text-zinc-600 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+              </Link>
             </div>
+          </div>
+        ) : (
+          <div className="mb-4 h-12 flex items-center justify-between text-zinc-600 italic text-sm">
+            <span>{activeProgram ? "Вне программы" : "Нет активной программы"}</span>
+            <Link href="/program" className="text-xs border border-zinc-800 px-2 py-0.5 rounded hover:bg-zinc-900 transition-colors">
+              Управление
+            </Link>
           </div>
         )}
 
-        {/* Calendar Grid */}
-        {monthInfo && (
-          <>
-            {/* Current Status */}
-            <div className="flex flex-wrap items-center justify-between gap-4 mb-4 text-sm">
-              <div className="text-[var(--text-muted)]">
-                Месяц: <span className="text-[var(--text-primary)] font-semibold">{monthInfo.y}-{String(monthInfo.m).padStart(2, "0")}</span>
-              </div>
-              <div className="text-[var(--text-muted)]">
-                Сегодня: <span className="text-[var(--text-primary)] font-semibold">{todayYmd}</span>
-                {todayPhase?.phase && (
-                  <span className="ml-2 text-[var(--accent-primary)]">
-                    • {todayPhase.phase.name} (#{todayWorkoutIndex})
-                  </span>
-                )}
-              </div>
+        {/* CALENDAR GRID (3 Weeks) */}
+        {activeProgram && (
+          <div className="mb-6">
+            {/* Navigation */}
+            <div className="flex justify-between items-center mb-2 px-1">
+              <button onClick={handlePrevWeek} className="p-2 -ml-2 text-zinc-500 hover:text-white transition-colors">
+                ←
+              </button>
+              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">
+                {format(viewDate, "MMMM", { locale: ru })}
+              </span>
+              <button onClick={handleNextWeek} className="p-2 -mr-2 text-zinc-500 hover:text-white transition-colors">
+                →
+              </button>
             </div>
 
-            {/* Grid */}
-            <div className="overflow-x-auto">
-              <div className="min-w-[720px]">
-                <div className="tech-grid-header">
-                  {["ПН", "ВТ", "СР", "ЧТ", "ПТ", "СБ", "ВС"].map((x) => (
-                    <span key={x}>{x}</span>
-                  ))}
+            {/* Grid Headers */}
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'].map(day => (
+                <div key={day} className="text-[9px] text-center text-zinc-600 font-bold">
+                  {day}
                 </div>
-
-                <div className="grid grid-cols-7 gap-2">
-                  {monthInfo.cells.map((c, idx) => {
-                    if (!c.ymd) return <div key={idx} className="h-20" />;
-
-                    const ymd = c.ymd;
-                    const training = isTrainingDay(ymd);
-                    const selected = ymd === selectedYmd;
-                    const isToday = ymd === todayYmd;
-
-                    const cellClasses = [
-                      "tech-cell h-20 text-left",
-                      training && "training",
-                      selected && "active",
-                      isToday && "today",
-                    ].filter(Boolean).join(" ");
-
-                    return (
-                      <button
-                        key={ymd}
-                        type="button"
-                        onClick={() => setSelectedYmd(ymd)}
-                        className={cellClasses}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-semibold">{c.day}</span>
-                          {isToday && <span className="tech-badge">TODAY</span>}
-                        </div>
-
-                        {training && (
-                          <div className="mt-2 text-[10px] text-[var(--text-muted)] font-mono tracking-wide">
-                            09:00 • 19:00 • 20:30
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Selected Day Info */}
-            <div className="mt-6 p-4 rounded-xl bg-[rgba(59,130,246,0.1)] border border-[rgba(59,130,246,0.3)]">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="font-semibold">{selectedYmd}</div>
-                  <div className="text-sm text-[var(--text-muted)]">
-                    {isTrainingDay(selectedYmd) ? (
-                      <span className="text-[var(--accent-success)]">● Тренировочный день</span>
-                    ) : (
-                      <span>○ Отдых</span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-right">
-                  <div className="text-xs text-[var(--text-muted)]">Позиция в цикле</div>
-                  <div className="font-semibold">
-                    {selectedWorkoutIndex > 0 ? `#${selectedWorkoutIndex}` : "До старта"}
-                  </div>
-                  {selectedPhase?.phase && (
-                    <div className="text-xs text-[var(--accent-primary)]">
-                      {selectedPhase.phase.name} ({selectedPhase.within}/{selectedPhase.phase.workouts})
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════════
-          FEED — Events & Achievements
-          ═══════════════════════════════════════════════════════════════ */}
-      <section className="glass-panel glow-effect">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold tracking-tight">📰 Лента событий</h2>
-          <span className="tech-badge success">{feed.length} записей</span>
-        </div>
-
-        {/* Add Form */}
-        <div className="grid gap-4 md:grid-cols-12 p-4 rounded-xl bg-[rgba(0,0,0,0.3)] mb-6">
-          <div className="md:col-span-2">
-            <div className="text-xs text-[var(--text-muted)] mb-1">Дата</div>
-            <input
-              className="tech-input"
-              type="date"
-              value={feedDate}
-              onChange={(e) => setFeedDate(e.target.value)}
-            />
-          </div>
-
-          <div className="md:col-span-3">
-            <div className="text-xs text-[var(--text-muted)] mb-1">Дисциплина</div>
-            <select
-              className="tech-input"
-              value={feedDisciplineSlug}
-              onChange={(e) => setFeedDisciplineSlug(e.target.value)}
-            >
-              {disciplineOptions.map((o) => (
-                <option key={o.slug} value={o.slug}>
-                  {o.name}
-                </option>
               ))}
-            </select>
-          </div>
+            </div>
 
-          <div className="md:col-span-4">
-            <div className="text-xs text-[var(--text-muted)] mb-1">Заголовок</div>
-            <input
-              className="tech-input"
-              placeholder="20 подтягиваний подряд"
-              value={feedTitle}
-              onChange={(e) => setFeedTitle(e.target.value)}
-            />
-          </div>
+            {/* Grid Days */}
+            <div className="grid grid-cols-7 gap-y-1 gap-x-1">
+              {gridDays.map((d, i) => {
+                const isSelected = isSameDay(d, selectedDate);
+                const isToday = isSameDay(d, new Date());
 
-          <div className="md:col-span-3">
-            <div className="text-xs text-[var(--text-muted)] mb-1">Ссылка на видео</div>
-            <input
-              className="tech-input"
-              placeholder="https://..."
-              value={feedVideoUrl}
-              onChange={(e) => setFeedVideoUrl(e.target.value)}
-            />
-          </div>
+                const dayPhaseInfo = getPhaseForDate(activeProgram, d);
+                const dayColor = dayPhaseInfo?.color;
 
-          <div className="md:col-span-12 flex justify-end">
-            <button className="tech-btn" onClick={addFeedItem} type="button">
-              ➕ Добавить
-            </button>
-          </div>
-        </div>
+                const wIndex = getWorkoutIndexForDate(new Date(activeProgram.start_date), d);
+                const hasWorkout = workoutsMap.has(wIndex);
 
-        {/* Feed List */}
-        <div className="space-y-3">
-          {feed.length === 0 ? (
-            <div className="text-center text-[var(--text-muted)] py-8">
-              Лента пуста
+                // Dim days not in the middle week? Optional.
+                // Let's keep them all same brightness but maybe differentiate slightly?
+                // const isCurrentViewWeek = isSameWeek(d, viewDate, { weekStartsOn: 1 });
+
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedDate(d)}
+                    className={`
+                                     relative h-10 flex flex-col items-center justify-center rounded-sm
+                                     transition-all duration-200 group
+                                     border border-transparent
+                                 `}
+                    style={{
+                      backgroundColor: dayPhaseInfo.cycle ? (dayColor ? `${dayColor}15` : 'rgba(255,255,255,0.05)') : 'transparent',
+                    }}
+                  >
+                    {/* Highlight active selection */}
+                    {isSelected && (
+                      <div className="absolute inset-0 border border-white/50 bg-white/5 z-20" />
+                    )}
+
+                    {/* Day Number */}
+                    <span className={`
+                                     text-xs font-bold z-10 
+                                     ${isToday ? 'text-yellow-500' : 'text-zinc-400 group-hover:text-white'}
+                                     ${isSelected ? '!text-white' : ''}
+                                 `}>
+                      {format(d, "d")}
+                    </span>
+
+                    {/* Workout Indicator */}
+                    {hasWorkout && (
+                      <div
+                        className="h-0.5 w-3 mt-0.5 rounded-full z-10"
+                        style={{ backgroundColor: dayColor || '#3b82f6' }}
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* WORKOUT DISPLAY */}
+        <div className="min-h-[40vh] relative pt-2 border-t border-zinc-900">
+          {selectedWorkout ? (
+            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
+              {/* Title */}
+              <div className="mb-6 flex items-end justify-between border-b border-zinc-800 pb-4">
+                <div>
+                  <h3 className="text-3xl font-black italic uppercase text-white leading-none">
+                    {selectedWorkout.title}
+                  </h3>
+                  <p className="text-xs font-mono text-zinc-500 mt-2 uppercase tracking-wide">
+                    {selectedWorkout.phaseTitle} // {format(selectedDate, "d MMMM", { locale: ru })}
+                  </p>
+                </div>
+                {/* Circle Graph or Icon could go here */}
+                <div className="text-4xl opacity-20 grayscale">
+                  🏋️‍♂️
+                </div>
+              </div>
+
+              {/* Blocks Aggressive Style */}
+              <div className="space-y-6">
+                {selectedWorkout.blocks.length === 0 && (
+                  <p className="text-zinc-600 font-mono text-sm py-8 text-center text-zinc-700 uppercase tracking-widest">
+                    [ Нет данных ]
+                  </p>
+                )}
+
+                {selectedWorkout.blocks.map((block: any, idx: number) => (
+                  <div key={block.id} className="relative pl-4">
+                    {/* Vertical Line */}
+                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-zinc-800" />
+
+                    {/* Block Header */}
+                    {block.title && (
+                      <div className="mb-3">
+                        <span className="bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded-sm uppercase tracking-wider">
+                          {block.title}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Rows */}
+                    <div className="space-y-3">
+                      {block.rows.map((row: any) => (
+                        <div key={row.id} className="group">
+                          <div className="flex gap-4 items-baseline">
+                            <span className="font-mono text-sm font-bold w-[2.5ch] shrink-0 text-yellow-500">
+                              {row.prefix}
+                            </span>
+                            <span className="text-zinc-300 text-sm leading-relaxed font-medium">
+                              {row.content}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
-            feed.map((it) => {
-              const dName = it.disciplineSlug
-                ? (list.find((d) => d.slug === it.disciplineSlug)?.name ?? it.disciplineSlug)
-                : null;
-
-              return (
-                <div key={it.id} className="tech-cell">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <div className="font-semibold">{it.title}</div>
-                      <div className="text-sm text-[var(--text-muted)]">
-                        {it.date}
-                        {dName && <span className="ml-2 text-[var(--accent-primary)]">• {dName}</span>}
-                      </div>
-
-                      {it.videoUrl && (
-                        <a
-                          className="inline-block mt-2 text-sm text-[var(--accent-primary)] hover:underline"
-                          href={it.videoUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          🎬 Открыть видео
-                        </a>
-                      )}
-                    </div>
-
-                    <button
-                      className="btn btn-ghost text-xs"
-                      onClick={() => removeFeedItem(it.id)}
-                      type="button"
-                    >
-                      ✕ Удалить
-                    </button>
-                  </div>
-                </div>
-              );
-            })
+            // Rest State
+            <div className="flex flex-col items-center justify-center h-64 opacity-30 select-none">
+              <div className="text-6xl font-black text-zinc-800 mb-2">REST</div>
+              <div className="text-xs font-mono uppercase tracking-[0.5em] text-zinc-600">Recovery Day</div>
+            </div>
           )}
         </div>
-      </section>
-    </main>
+      </main>
+
+      {/* Nav */}
+      <nav className="fixed bottom-0 left-0 right-0 border-t border-zinc-900 bg-black/95 backdrop-blur-xl pb-safe z-50">
+        <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
+          <Link href="/" className="flex flex-col items-center gap-1 text-white scale-110 transition-all">
+            <span className="text-xl opacity-80">🏠</span>
+          </Link>
+          <Link href="/results" className="flex flex-col items-center gap-1 text-zinc-600 hover:text-white transition-colors">
+            <span className="text-xl opacity-60">📊</span>
+          </Link>
+          <Link href="/account" className="flex flex-col items-center gap-1 text-zinc-600 hover:text-white transition-colors">
+            <span className="text-xl opacity-60">👤</span>
+          </Link>
+        </div>
+      </nav>
+    </div>
   );
 }

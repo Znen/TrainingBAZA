@@ -13,6 +13,7 @@ import {
     isBase64Image,
 } from "@/lib/users";
 import { useAuth } from "@/components/AuthProvider";
+import { getCloudProfile, type CloudProfile } from "@/lib/cloudSync";
 
 // Хелпер для рендеринга аватара (эмодзи или фото)
 function renderAvatar(avatar: string | undefined, size: "sm" | "lg" = "sm") {
@@ -45,6 +46,16 @@ export default function UserSwitcher() {
 
     // Supabase auth
     const { user: authUser, loading: authLoading, signOut } = useAuth();
+    const [cloudProfile, setCloudProfile] = useState<CloudProfile | null>(null);
+
+    // Load cloud profile
+    useEffect(() => {
+        if (authUser && !authLoading) {
+            getCloudProfile(authUser.id).then(setCloudProfile);
+        } else {
+            setCloudProfile(null);
+        }
+    }, [authUser, authLoading]);
 
     useEffect(() => {
         setMounted(true);
@@ -92,6 +103,20 @@ export default function UserSwitcher() {
     }, [showDropdown]);
 
     const activeUser = users.find((u) => u.id === activeUserId);
+
+    // Determine display properties
+    // If authenticated: use cloud profile
+    // If NOT authenticated: force "Guest" and no admin badge (ignore local storage legacy "Trainer")
+    const displayName = authUser
+        ? (cloudProfile?.name || authUser.email?.split('@')[0] || "Атлет")
+        : "Гость";
+
+    const displayAvatar = authUser
+        ? (cloudProfile?.avatar || activeUser?.avatar)
+        : undefined; // Default avatar for guest
+
+    // Only cloud admins get the badge
+    const showAdminBadge = authUser && cloudProfile?.role === 'admin';
 
     const handleSwitchUser = (userId: string) => {
         setActiveUserId(userId);
@@ -308,9 +333,9 @@ export default function UserSwitcher() {
                     onClick={() => setShowDropdown(!showDropdown)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-blue-500 bg-zinc-800 hover:bg-zinc-700 text-sm text-white cursor-pointer transition-colors"
                 >
-                    {renderAvatar(activeUser?.avatar)}
-                    <span>{activeUser?.name && activeUser.name.trim() ? activeUser.name : "Войти"}</span>
-                    {activeUser?.role === "admin" && <span className="text-xs">👑</span>}
+                    {renderAvatar(displayAvatar)}
+                    <span>{displayName}</span>
+                    {showAdminBadge && <span className="text-xs">👑</span>}
                     <span className="text-xs opacity-50">{showDropdown ? "▲" : "▼"}</span>
                 </button>
             </div>

@@ -1,56 +1,159 @@
 "use client";
 
-import Link from "next/link";
+import { useState, useEffect } from "react";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useAuth } from "@/components/AuthProvider";
+import {
+  getPrograms,
+  createProgram,
+  setActiveProgram,
+  deleteNode,
+} from "@/lib/programApi";
+import { Program } from "@/types/program";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { ProgramEditor } from "@/components/ProgramEditor";
 
 export default function ProgramPage() {
   return (
     <ProtectedRoute>
-      <ProgramContent />
+      <ProgramAdminContent />
     </ProtectedRoute>
   );
 }
 
-function ProgramContent() {
-  return (
-    <main>
-      {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">📅 Программа</h1>
-          <p className="page-subtitle">Управление тренировочным циклом</p>
-        </div>
+function ProgramAdminContent() {
+  const { user } = useAuth();
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
 
-        <Link className="btn btn-secondary" href="/">
-          ← На главную
-        </Link>
+  // Initial load
+  useEffect(() => {
+    loadPrograms();
+  }, []);
+
+  const loadPrograms = async () => {
+    setLoading(true);
+    try {
+      const data = await getPrograms();
+      setPrograms(data);
+    } catch (e) {
+      console.error(e);
+      alert("Ошибка загрузки программ");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateProgram = async () => {
+    const title = prompt("Название программы (например 'Весна 2026')");
+    if (!title) return;
+
+    // Default start date: next Monday
+    const nextMonday = new Date();
+    nextMonday.setDate(nextMonday.getDate() + ((1 + 7 - nextMonday.getDay()) % 7));
+    const defaultDate = nextMonday.toISOString().split('T')[0];
+
+    const dateStr = prompt("Дата начала (YYYY-MM-DD)", defaultDate);
+    if (!dateStr) return;
+
+    try {
+      await createProgram(title, dateStr);
+      loadPrograms();
+    } catch (e) {
+      alert("Ошибка создания");
+    }
+  };
+
+  const handleDeleteProgram = async (id: string) => {
+    if (!confirm("Удалить программу?")) return;
+    try {
+      await deleteNode("programs", id);
+      loadPrograms();
+    } catch (e) {
+      alert("Ошибка удаления");
+    }
+  };
+
+  if (loading) return <div className="p-8 text-center">Загрузка...</div>;
+
+  // Editor View
+  if (selectedProgramId) {
+    return (
+      <main className="max-w-4xl mx-auto p-4 pb-24">
+        <ProgramEditor
+          programId={selectedProgramId}
+          onClose={() => {
+            setSelectedProgramId(null);
+            loadPrograms();
+          }}
+        />
+      </main>
+    );
+  }
+
+  return (
+    <main className="max-w-4xl mx-auto p-4 pb-24">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h1 className="text-2xl font-bold">Управление программами</h1>
+          <p className="text-zinc-400">Создание и редактирование циклов</p>
+        </div>
+        <button
+          onClick={handleCreateProgram}
+          className="btn btn-primary"
+        >
+          + Новая программа
+        </button>
       </div>
 
-      {/* Заглушка */}
-      <div className="card">
-        <div className="card-body text-center py-16">
-          <div className="text-6xl mb-4">🚧</div>
-          <h2 className="text-xl font-semibold mb-2">В разработке</h2>
-          <p className="text-[var(--text-secondary)] max-w-md mx-auto">
-            Здесь будет управление циклом и фазами, календарь нагрузок,
-            дополнительные активности (соревнования, встречи).
-          </p>
-
-          <div className="mt-8 flex flex-wrap justify-center gap-4">
-            <div className="card bg-[var(--bg-secondary)] px-6 py-4 text-center">
-              <div className="text-2xl mb-1">📊</div>
-              <div className="text-sm text-[var(--text-muted)]">Фазы цикла</div>
+      <div className="space-y-4">
+        {programs.map(p => (
+          <div key={p.id} className={`p-4 rounded-xl border border-zinc-700 bg-zinc-800 flex justify-between items-center ${p.is_active ? 'border-green-500/50 bg-green-900/10' : ''}`}>
+            <div>
+              <div className="font-semibold text-lg flex items-center gap-2">
+                {p.title}
+                {p.is_active && <span className="text-xs bg-green-500 text-black px-2 py-0.5 rounded-full">Активна</span>}
+              </div>
+              <div className="text-sm text-zinc-400">
+                Старт: {format(new Date(p.start_date), "d MMMM yyyy", { locale: ru })}
+              </div>
             </div>
-            <div className="card bg-[var(--bg-secondary)] px-6 py-4 text-center">
-              <div className="text-2xl mb-1">📆</div>
-              <div className="text-sm text-[var(--text-muted)]">Календарь</div>
-            </div>
-            <div className="card bg-[var(--bg-secondary)] px-6 py-4 text-center">
-              <div className="text-2xl mb-1">🏆</div>
-              <div className="text-sm text-[var(--text-muted)]">События</div>
+            <div className="flex gap-2">
+              {/* Actions */}
+              {!p.is_active && (
+                <button
+                  onClick={async () => {
+                    await setActiveProgram(p.id);
+                    loadPrograms();
+                  }}
+                  className="px-3 py-1.5 text-sm bg-zinc-700 hover:bg-zinc-600 rounded-lg"
+                >
+                  Сделать активной
+                </button>
+              )}
+              <button
+                onClick={() => setSelectedProgramId(p.id)}
+                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 rounded-lg"
+              >
+                Редактировать
+              </button>
+              <button
+                onClick={() => handleDeleteProgram(p.id)}
+                className="px-3 py-1.5 text-sm bg-red-900/50 hover:bg-red-900 text-red-200 rounded-lg"
+              >
+                Удалить
+              </button>
             </div>
           </div>
-        </div>
+        ))}
+
+        {programs.length === 0 && (
+          <div className="text-center py-12 text-zinc-500 border-2 border-dashed border-zinc-800 rounded-xl">
+            Нет созданных программ
+          </div>
+        )}
       </div>
     </main>
   );
