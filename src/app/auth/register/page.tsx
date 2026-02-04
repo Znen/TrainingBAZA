@@ -28,7 +28,10 @@ export default function RegisterPage() {
         const { error } = await signUp(email, password, name);
 
         if (error) {
-            setError(error.message);
+            let msg = error.message;
+            if (msg.includes("rate limit")) msg = "Слишком много попыток. Подождите немного.";
+            if (msg.includes("already registered")) msg = "Пользователь уже существует.";
+            setError(msg);
             setLoading(false);
         } else {
             setSuccess(true);
