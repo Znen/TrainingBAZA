@@ -28,6 +28,13 @@ export default function Home() {
       try {
         const prog = await getActiveProgram();
         setActiveProgram(prog);
+
+        // If program starts in the future, jump to start date
+        if (prog && new Date(prog.start_date) > new Date()) {
+          setViewDate(startOfWeek(new Date(prog.start_date), { weekStartsOn: 1 }));
+          setSelectedDate(new Date(prog.start_date));
+        }
+
       } catch (e) {
         console.error(e);
         setLoadError(true);
