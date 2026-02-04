@@ -182,7 +182,14 @@ function ProgramAdminContent() {
 
               <div className="flex gap-2 pt-2">
                 <button
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    // DELETE LOGIC:
+                    // Since the program is only created when "Create" is clicked,
+                    // "Cancelling" here effectively deletes any draft data by clearing the state.
+                    setShowCreateModal(false);
+                    setNewProgramTitle("");
+                    setNewProgramDate("");
+                  }}
                   className="flex-1 py-2 text-sm bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
                 >
                   Отмена
