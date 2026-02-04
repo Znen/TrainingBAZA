@@ -44,70 +44,77 @@ export default function RatingsPage() {
   const [store, setStore] = useState<HistoryStore>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [isCloudData, setIsCloudData] = useState(false);
+  const [debug, setDebug] = useState({ profiles: 0, results: 0, lastFetch: "" });
 
-  useEffect(() => {
-    async function load() {
-      // 1. Try cloud if logged in
-      if (authUser) {
-        try {
-          const [cloudProfiles, cloudResults] = await Promise.all([
-            getAllCloudProfiles(),
-            getAllCloudResults()
-          ]);
+  const loadData = async () => {
+    // 1. Try cloud if logged in
+    if (authUser) {
+      try {
+        const [cloudProfiles, cloudResults] = await Promise.all([
+          getAllCloudProfiles(),
+          getAllCloudResults()
+        ]);
 
-          if (cloudProfiles.length > 0) {
-            const mappedUsers: User[] = cloudProfiles.map(p => ({
-              id: p.id,
-              name: p.name,
-              role: p.role as any,
-              avatar: p.avatar || undefined,
-              avatarType: p.avatar_type as any
-            }));
+        setDebug({
+          profiles: cloudProfiles.length,
+          results: cloudResults.length,
+          lastFetch: new Date().toLocaleTimeString()
+        });
 
-            const mappedStore: HistoryStore = {};
-            cloudResults.forEach(r => {
-              if (!mappedStore[r.user_id]) mappedStore[r.user_id] = {};
-              if (!mappedStore[r.user_id][r.discipline_slug]) {
-                mappedStore[r.user_id][r.discipline_slug] = [];
-              }
-              mappedStore[r.user_id][r.discipline_slug].push({
-                ts: r.recorded_at,
-                value: Number(r.value)
-              });
+        if (cloudProfiles.length > 0) {
+          const mappedUsers: User[] = cloudProfiles.map(p => ({
+            id: p.id,
+            name: p.name,
+            role: p.role as any,
+            avatar: p.avatar || undefined,
+            avatarType: p.avatar_type as any
+          }));
+
+          const mappedStore: HistoryStore = {};
+          cloudResults.forEach(r => {
+            if (!mappedStore[r.user_id]) mappedStore[r.user_id] = {};
+            if (!mappedStore[r.user_id][r.discipline_slug]) {
+              mappedStore[r.user_id][r.discipline_slug] = [];
+            }
+            mappedStore[r.user_id][r.discipline_slug].push({
+              ts: r.recorded_at,
+              value: Number(r.value)
             });
+          });
 
-            setUsers(mappedUsers);
-            setStore(mappedStore);
-            setActiveUserId(authUser.id);
-            setIsCloudData(true);
-            return; // Success, exit
-          }
-        } catch (err) {
-          console.error("Cloud ratings error:", err);
+          setUsers(mappedUsers);
+          setStore(mappedStore);
+          setActiveUserId(authUser.id);
+          setIsCloudData(true);
+          return; // Success, exit
         }
+      } catch (err) {
+        console.error("Cloud ratings error:", err);
       }
-
-      // 2. Fallback to local
-      let u = loadUsers();
-      if (u.length === 0) {
-        const created = createUser("User 1");
-        u = [created];
-        saveUsers(u);
-      }
-      setUsers(u);
-
-      const savedActive = loadActiveUserId();
-      const initialActive = savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id;
-      setActiveUserId(initialActive);
-      saveActiveUserId(initialActive);
-
-      const s = loadHistoryStore(initialActive);
-      setStore(s);
-      setIsCloudData(false);
     }
 
+    // 2. Fallback to local
+    let u = loadUsers();
+    if (u.length === 0) {
+      const created = createUser("User 1");
+      u = [created];
+      saveUsers(u);
+    }
+    setUsers(u);
+
+    const savedActive = loadActiveUserId();
+    const initialActive = savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id;
+    setActiveUserId(initialActive);
+    saveActiveUserId(initialActive);
+
+    const s = loadHistoryStore(initialActive);
+    setStore(s);
+    setIsCloudData(false);
+  };
+
+  useEffect(() => {
     if (!authLoading) {
-      load();
+      loadData();
     }
   }, [authUser, authLoading]);
 
@@ -142,7 +149,7 @@ export default function RatingsPage() {
   }, [users, list, store]);
 
   return (
-    <main>
+    <main className="pb-24">
       {/* Header */}
       <div className="page-header">
         <div>
@@ -260,6 +267,23 @@ export default function RatingsPage() {
             )}
           </section>
         ))}
+      </div>
+
+      {/* System Debug */}
+      <div className="mt-12 p-4 border-t border-white/5 opacity-50 text-[10px] font-mono">
+        <div className="flex justify-between items-center mb-2">
+          <span className="uppercase tracking-widest text-zinc-500 font-bold">System Debug</span>
+          <button onClick={loadData} className="px-2 py-0.5 border border-zinc-700 rounded hover:bg-zinc-800 transition-colors">
+            [DEBUG: Force Refresh]
+          </button>
+        </div>
+        <pre className="text-zinc-400">
+          Cloud: {isCloudData ? "Active" : "Disabled"}{"\n"}
+          Profiles: {debug.profiles}{"\n"}
+          Raw Results: {debug.results}{"\n"}
+          Refreshed: {debug.lastFetch || "never"}{"\n"}
+          User: {authUser?.email || "guest"}
+        </pre>
       </div>
     </main>
   );

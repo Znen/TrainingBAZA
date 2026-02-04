@@ -38,26 +38,45 @@ function SyncContent() {
         let errors = 0;
 
         try {
-            // Получаем локальные данные из localStorage
-            const historyJson = localStorage.getItem("historyStore");
+            // 1. Try new format first
+            let historyJson = localStorage.getItem("trainingBaza:history:v2");
+            let localHistory: any = null;
 
-            if (!historyJson) {
+            if (historyJson) {
+                const store = JSON.parse(historyJson);
+                // HistoryStore is Record<userId, Record<slug, HistoryItem[]>>
+                // We merge everything for this sync attempt to be safe
+                localHistory = {};
+                Object.values(store).forEach((userHistory: any) => {
+                    Object.entries(userHistory).forEach(([slug, items]: [string, any]) => {
+                        localHistory[slug] = [...(localHistory[slug] || []), ...items];
+                    });
+                });
+            } else {
+                // 2. Fallback to old key
+                historyJson = localStorage.getItem("historyStore");
+                if (historyJson) {
+                    localHistory = JSON.parse(historyJson);
+                }
+            }
+
+            if (!localHistory || Object.keys(localHistory).length === 0) {
                 setSyncResult({ success: 0, errors: 0 });
                 setSyncing(false);
                 return;
             }
 
-            const localHistory: LocalHistoryStore = JSON.parse(historyJson);
-
             // Синхронизируем каждый результат
             for (const [slug, results] of Object.entries(localHistory)) {
-                for (const result of results) {
+                if (!Array.isArray(results)) continue;
+
+                for (const result of (results as any[])) {
                     try {
                         const added = await addCloudResult({
                             user_id: user.id,
                             discipline_slug: slug,
                             value: result.value,
-                            recorded_at: result.date || new Date().toISOString(),
+                            recorded_at: result.ts || result.date || new Date().toISOString(),
                         });
 
                         if (added) {
