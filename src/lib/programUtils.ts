@@ -63,24 +63,28 @@ export function getPhaseForDate(program: FullProgram, targetDate: Date): { cycle
 
     if (diff < 0) return {}; // Before program starts
 
-    // Calculate which global "Week Index" this date falls into
-    const weekIndex = Math.floor(diff / 7);
+    // Rule: Phase color persists until its last workout day.
+    // New phase color starts the following day.
 
-    // Now iterate through the program to find which Phase corresponds to this Week Index.
-    // Order is strictly sequential: Cycle 1 -> Phases 1..N, Cycle 2 -> Phases 1..M
-
-    let currentWeekCounter = 0;
+    let globalWorkoutCounter = 0;
 
     for (const cycle of program.cycles) {
         // Sort phases to be sure
         const sortedPhases = (cycle.phases || []).sort((a, b) => a.order_index - b.order_index);
 
         for (const phase of sortedPhases) {
-            if (currentWeekCounter === weekIndex) {
-                // Return Phase Color if present, else Cycle Color
+            const workouts = phase.workouts || [];
+            if (workouts.length === 0) continue;
+
+            const lastWorkoutIdx = globalWorkoutCounter + workouts.length - 1;
+            const lastWorkoutDate = getWorkoutDate(startDate, lastWorkoutIdx);
+            const phaseEndDiff = differenceInCalendarDays(lastWorkoutDate, startDate);
+
+            if (diff <= phaseEndDiff) {
                 return { cycle, phase, color: phase.color || cycle.color };
             }
-            currentWeekCounter++;
+
+            globalWorkoutCounter += workouts.length;
         }
     }
 
