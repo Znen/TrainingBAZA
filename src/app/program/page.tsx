@@ -110,17 +110,17 @@ function ProgramAdminContent() {
 
       <div className="space-y-4">
         {programs.map(p => (
-          <div key={p.id} className={`p-4 rounded-xl border border-zinc-700 bg-zinc-800 flex justify-between items-center ${p.is_active ? 'border-green-500/50 bg-green-900/10' : ''}`}>
+          <div key={p.id} className={`p-4 rounded-xl border border-zinc-700 bg-zinc-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 ${p.is_active ? 'border-green-500/50 bg-green-900/10' : ''}`}>
             <div>
-              <div className="font-semibold text-lg flex items-center gap-2">
+              <div className="font-semibold text-lg flex items-center gap-2 flex-wrap">
                 {p.title}
-                {p.is_active && <span className="text-xs bg-green-500 text-black px-2 py-0.5 rounded-full">Активна</span>}
+                {p.is_active && <span className="text-xs bg-green-500 text-black px-2 py-0.5 rounded-full whitespace-nowrap">Активна</span>}
               </div>
               <div className="text-sm text-zinc-400">
                 Старт: {format(new Date(p.start_date), "d MMMM yyyy", { locale: ru })}
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
               {/* Actions */}
               {!p.is_active && (
                 <button
@@ -128,20 +128,20 @@ function ProgramAdminContent() {
                     await setActiveProgram(p.id);
                     loadPrograms();
                   }}
-                  className="px-3 py-1.5 text-sm bg-zinc-700 hover:bg-zinc-600 rounded-lg"
+                  className="flex-1 md:flex-none px-3 py-2 md:py-1.5 text-sm bg-zinc-700 hover:bg-zinc-600 rounded-lg text-center whitespace-nowrap"
                 >
-                  Сделать активной
+                  Активна
                 </button>
               )}
               <button
                 onClick={() => setSelectedProgramId(p.id)}
-                className="px-3 py-1.5 text-sm bg-blue-600 hover:bg-blue-500 rounded-lg"
+                className="flex-1 md:flex-none px-3 py-2 md:py-1.5 text-sm bg-blue-600 hover:bg-blue-500 rounded-lg text-center whitespace-nowrap"
               >
                 Редактировать
               </button>
               <button
                 onClick={() => handleDeleteProgram(p.id)}
-                className="px-3 py-1.5 text-sm bg-red-900/50 hover:bg-red-900 text-red-200 rounded-lg"
+                className="flex-1 md:flex-none px-3 py-2 md:py-1.5 text-sm bg-red-900/50 hover:bg-red-900 text-red-200 rounded-lg text-center whitespace-nowrap"
               >
                 Удалить
               </button>
