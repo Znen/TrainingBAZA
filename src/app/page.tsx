@@ -324,14 +324,15 @@ export default function Home() {
       </nav>
 
       {/* DEBUG SECTION */}
-      <div className="max-w-lg mx-auto px-4 pb-32 pt-8">
-        <details className="text-[10px] text-zinc-800 font-mono">
-          <summary>Debug Info</summary>
-          <pre className="mt-2 whitespace-pre-wrap">
+      <div className="max-w-lg mx-auto px-4 pb-32 pt-8 relative z-40">
+        <details className="text-xs text-white bg-zinc-800 p-2 rounded border border-zinc-700">
+          <summary className="cursor-pointer font-bold text-yellow-500">🐞 DEBUG INFO (Click me)</summary>
+          <pre className="mt-2 whitespace-pre-wrap font-mono text-[10px] text-zinc-300">
             User: {user?.email || 'Guest'}{"\n"}
-            Active Prog: {activeProgram ? activeProgram.id : 'null'}{"\n"}
+            Refreshed: {new Date().toLocaleTimeString()}{"\n"}
+            Active Prog ID: {activeProgram ? activeProgram.id : 'null'}{"\n"}
             Load Error: {loadError ? 'Yes' : 'No'}{"\n"}
-            Current Date: {new Date().toISOString()}
+            View Date: {viewDate.toISOString().split('T')[0]}
           </pre>
         </details>
       </div>
