@@ -87,18 +87,21 @@ function ResultsContent() {
   useEffect(() => {
     let u = loadUsers();
 
-    // Если локальных пользователей нет, но мы вошли через облако — создаём запись
-    if (u.length === 0 && authUser && !authLoading) {
-      const newUser: User = {
-        id: authUser.id,
-        name: authUser.user_metadata?.name || "Пользователь",
-        email: authUser.email,
-        role: "user",
-        avatarType: "emoji",
-        measurements: []
-      };
-      u = [newUser];
-      saveUsers(u);
+    // Если мы авторизованы, убеждаемся, что пользователь есть в списке
+    if (authUser && !authLoading) {
+      const exists = u.find(x => x.id === authUser.id);
+      if (!exists) {
+        const newUser: User = {
+          id: authUser.id,
+          name: authUser.user_metadata?.name || "Пользователь",
+          email: authUser.email,
+          role: "user",
+          avatarType: "emoji",
+          measurements: []
+        };
+        u = [...u, newUser];
+        saveUsers(u);
+      }
     }
 
     if (u.length === 0) return;
