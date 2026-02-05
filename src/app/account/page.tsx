@@ -847,7 +847,7 @@ function StatCard({
       </div>
 
       <p className="text-[8px] font-mono text-zinc-600 uppercase mt-2 tracking-tighter">
-        {stat.disciplineCount} Recorded PRs
+        {stat.disciplineCount} Рекордов
       </p>
     </button>
   );
@@ -882,7 +882,7 @@ function DisciplineRow({
             </h4>
             {show1RM && (
               <span className={`text-[8px] font-mono leading-none ${isExpanded ? "text-yellow-500" : "text-zinc-600"}`}>
-                [ {isExpanded ? "CLOSE DATA" : "SHOW %-RM"} ]
+                [ {isExpanded ? "СКРЫТЬ" : "ПОКАЗАТЬ %-ПМ"} ]
               </span>
             )}
           </div>
@@ -895,11 +895,11 @@ function DisciplineRow({
                     : `${value}${discipline.unit}`}
                 </span>
                 {show1RM && (
-                  <span className="text-[9px] text-zinc-700 ml-1">(1RM Equivalent)</span>
+                  <span className="text-[9px] text-zinc-700 ml-1">(Эквивалент ПМ)</span>
                 )}
               </>
             ) : (
-              "DATA MISSING"
+              "НЕТ ДАННЫХ"
             )}
           </div>
         </div>
@@ -929,14 +929,14 @@ function DisciplineRow({
             )}
           </div>
         ) : (
-          <div className="text-[8px] font-mono text-zinc-700">UNRANKED</div>
+          <div className="text-[8px] font-mono text-zinc-700">БЕЗ РАНГА</div>
         )}
       </div>
 
       {isExpanded && show1RM && (
         <div className="px-4 pb-4 bg-black/40 border-t border-white/5 animate-in slide-in-from-top-1">
           <div className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest py-3 text-center">
-            Calculated 1RM Percentages
+            Расчетные проценты ПМ
           </div>
           <div className="grid grid-cols-4 gap-1">
             {percentages.map(({ percent, weight }) => (
