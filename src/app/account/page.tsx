@@ -262,29 +262,31 @@ function AccountContent() {
   };
 
   return (
-    <main>
+    <div className="pb-12 max-w-lg mx-auto">
       {/* Header */}
-      <div className="page-header">
+      <div className="flex justify-between items-center mb-6 px-1">
         <div>
-          <h1 className="page-title">⚔️ Профиль атлета</h1>
+          <h1 className="text-2xl font-black italic uppercase text-white leading-none">
+            Личный <span className="text-[var(--accent-primary)]">Кабинет</span>
+          </h1>
           {isCurrentUserAdmin && viewingUserId !== activeUserId && (
-            <p className="text-sm text-[var(--accent-warning)]">
-              👁 Просмотр профиля: {viewingUser?.name}
+            <p className="text-[10px] font-mono text-yellow-500 uppercase tracking-widest mt-1">
+              👁 Просмотр: {viewingUser?.name}
             </p>
           )}
         </div>
 
         {/* Селектор пользователя для админа */}
         {isCurrentUserAdmin && (
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-[var(--text-muted)]">Просмотр:</span>
+          <div className="flex items-center gap-2 bg-white/5 border border-white/5 px-2 py-1 rounded">
+            <span className="text-[9px] font-mono text-zinc-600 uppercase">View:</span>
             <select
-              className="select"
+              className="bg-transparent text-[10px] font-mono text-zinc-400 outline-none cursor-pointer"
               value={viewingUserId}
               onChange={(e) => setViewingUserId(e.target.value)}
             >
               {users.map((u) => (
-                <option key={u.id} value={u.id}>
+                <option key={u.id} value={u.id} className="bg-black text-white">
                   {u.name} {u.role === "admin" ? "👑" : ""}
                 </option>
               ))}
@@ -293,10 +295,12 @@ function AccountContent() {
         )}
       </div>
 
-      {/* Hero Card */}
-      <div className="hero-card mb-8">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-500/20 to-transparent rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-blue-500/20 to-transparent rounded-full blur-3xl" />
+      {/* Hero Section */}
+      <div className="relative p-6 border border-white/5 bg-zinc-900/10 mb-8 overflow-hidden group">
+        <div
+          className="absolute top-0 right-0 w-64 h-64 opacity-20 pointer-events-none blur-3xl rounded-full"
+          style={{ backgroundColor: rank.color }}
+        />
 
         <div className="relative flex flex-col md:flex-row items-center gap-6">
           {/* Аватар */}
@@ -316,14 +320,14 @@ function AccountContent() {
               {renderAvatar(viewingUser, "lg")}
             </div>
             <div
-              className="absolute -bottom-2 -right-2 border-2 rounded-full px-3 py-1 text-sm font-bold"
+              className="absolute -bottom-2 -right-2 border border-white/10 rounded-sm px-2 py-0.5 text-[10px] font-mono font-black"
               style={{
-                backgroundColor: "#0f172a",
-                borderColor: rank.color,
+                backgroundColor: "#000",
                 color: rank.color,
+                boxShadow: `0 0 15px ${rank.color}40`,
               }}
             >
-              {overallLevel}
+              LVL {overallLevel}
             </div>
             {viewingUser?.role === "admin" && (
               <div className="absolute -top-1 -left-1 bg-yellow-500 text-black rounded-full w-6 h-6 flex items-center justify-center text-xs">
@@ -338,28 +342,27 @@ function AccountContent() {
               <div className="space-y-4">
                 <input
                   type="text"
-                  className="input w-full max-w-xs"
+                  className="w-full bg-black/60 border border-white/10 px-3 py-2 text-white outline-none focus:border-yellow-500"
                   placeholder="Имя"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   autoFocus
                 />
 
-                {/* Табы выбора типа аватара */}
                 <div className="flex gap-2 mb-2">
                   <button
                     type="button"
-                    className={`btn btn-sm ${editAvatarType === "emoji" ? "btn-primary" : "btn-secondary"}`}
+                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-all ${editAvatarType === "emoji" ? "bg-yellow-500 text-black border-yellow-500" : "bg-white/5 text-zinc-500 border-white/5 hover:text-white"}`}
                     onClick={() => setEditAvatarType("emoji")}
                   >
-                    😀 Эмодзи
+                    😀 Emoji
                   </button>
                   <button
                     type="button"
-                    className={`btn btn-sm ${editAvatarType === "photo" ? "btn-primary" : "btn-secondary"}`}
+                    className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-all ${editAvatarType === "photo" ? "bg-yellow-500 text-black border-yellow-500" : "bg-white/5 text-zinc-500 border-white/5 hover:text-white"}`}
                     onClick={() => setEditAvatarType("photo")}
                   >
-                    📷 Фото
+                    📷 Photo
                   </button>
                 </div>
 
@@ -369,9 +372,9 @@ function AccountContent() {
                       <button
                         key={av}
                         type="button"
-                        className={`text-2xl p-2 rounded-lg transition-all ${editAvatar === av
-                          ? "bg-[var(--accent-primary)] scale-110"
-                          : "bg-[var(--bg-secondary)] hover:bg-[var(--bg-card-hover)]"
+                        className={`text-2xl p-2 rounded transition-all ${editAvatar === av
+                          ? "bg-yellow-500 text-black scale-110"
+                          : "bg-white/5 hover:bg-white/10"
                           }`}
                         onClick={() => setEditAvatar(av)}
                       >
@@ -390,58 +393,66 @@ function AccountContent() {
                     />
                     <button
                       type="button"
-                      className="btn btn-secondary"
+                      className="px-3 py-1 text-[10px] font-black uppercase border border-white/20 text-white hover:bg-white/5 transition-colors"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      📷 Загрузить фото
+                      📷 Upload Avatar
                     </button>
                     {editAvatar && isBase64Image(editAvatar) && (
-                      <div className="mt-2">
+                      <div className="mt-2 text-center md:text-left">
                         <img
                           src={editAvatar}
                           alt="Превью"
-                          className="w-16 h-16 rounded-full object-cover"
+                          className="w-16 h-16 rounded-full object-cover border-2 border-yellow-500"
                         />
                       </div>
                     )}
-                    <p className="text-xs text-[var(--text-muted)]">
-                      Макс. размер: {MAX_PHOTO_SIZE / 1024}KB
-                    </p>
                   </div>
                 )}
 
                 <div className="flex gap-2">
-                  <button className="btn btn-primary btn-sm" onClick={handleSaveProfile}>
-                    Сохранить
+                  <button className="px-4 py-1.5 bg-yellow-500 text-black text-[10px] font-black uppercase tracking-widest hover:bg-yellow-400" onClick={handleSaveProfile}>
+                    Save Changes
                   </button>
                   <button
-                    className="btn btn-ghost btn-sm"
+                    className="px-4 py-1.5 bg-white/5 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10"
                     onClick={() => setIsEditingProfile(false)}
                   >
-                    Отмена
+                    Cancel
                   </button>
                 </div>
               </div>
             ) : (
               <>
-                <h2 className="text-2xl font-bold text-white mb-1">
+                <h2 className="text-2xl font-black uppercase italic text-white leading-tight">
                   {displayName}
                   {(displayRole === "admin" || isCloudAdmin) && (
-                    <span className="ml-2 text-sm text-yellow-500">Тренер</span>
+                    <span className="ml-2 text-[10px] font-mono text-yellow-500 uppercase tracking-widest bg-yellow-500/10 px-1.5 py-0.5 border border-yellow-500/30">Admin</span>
                   )}
                 </h2>
-                <p className="text-lg font-medium" style={{ color: rank.color }}>
+                <p className="text-xs font-mono uppercase tracking-[0.2em] mt-1" style={{ color: rank.color }}>
                   {rank.titleRu}
                 </p>
-                <p className="text-sm text-slate-400 mt-2">
-                  {filledDisciplines} из {list.length} дисциплин
-                </p>
+                <div className="flex items-center gap-1 mt-3">
+                  <div className="h-1 flex-1 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full transition-all duration-1000"
+                      style={{
+                        width: `${(filledDisciplines / list.length) * 100}%`,
+                        backgroundColor: rank.color
+                      }}
+                    />
+                  </div>
+                  <span className="text-[9px] font-mono text-zinc-600 uppercase">
+                    {filledDisciplines}/{list.length} PR
+                  </span>
+                </div>
                 {canEdit && (
                   <button
-                    className="btn btn-ghost btn-sm mt-2"
+                    className="mt-4 text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white border-b border-zinc-800 hover:border-white transition-all"
                     onClick={handleStartEditProfile}
                   >
-                    ✏️ Редактировать
+                    Edit Profile
                   </button>
                 )}
               </>
@@ -450,78 +461,78 @@ function AccountContent() {
 
           <div className="text-center">
             <div
-              className="text-5xl font-bold bg-clip-text text-transparent"
+              className="text-5xl font-black italic bg-clip-text text-transparent"
               style={{
                 backgroundImage: `linear-gradient(90deg, ${rank.color}, ${rank.color}cc)`,
               }}
             >
               {overallLevel}
             </div>
-            <p className="text-sm text-slate-400 mt-1">Уровень</p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mt-1">Tier Level</p>
           </div>
         </div>
       </div>
 
       {/* Измерения тела */}
-      <div className="card mb-8">
-        <div className="card-header">
-          <h3 className="card-title">📏 Измерения тела</h3>
+      <section className="bg-zinc-900/10 border border-white/5 overflow-hidden mb-8">
+        <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center bg-white/5">
+          <h3 className="text-[10px] font-black uppercase italic tracking-[0.2em] text-zinc-400">Метрики тела</h3>
           {canEdit && (
             <button
-              className="btn btn-secondary btn-sm"
+              className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 hover:text-white transition-colors"
               onClick={() => setShowMeasurementForm(!showMeasurementForm)}
             >
-              {showMeasurementForm ? "Скрыть" : "+ Добавить"}
+              {showMeasurementForm ? "[ Hide ]" : "[ LOG NEW ]"}
             </button>
           )}
         </div>
 
         {showMeasurementForm && canEdit && (
-          <div className="p-4 border-b border-[var(--border-default)] bg-[var(--bg-secondary)]">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="p-4 border-b border-white/5 bg-black/40 backdrop-blur-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div>
-                <label className="text-xs text-[var(--text-muted)] block mb-1">Вес (кг)</label>
+                <label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Вес (кг)</label>
                 <input
                   type="number"
-                  className="input input-sm"
+                  className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none"
                   placeholder="75.5"
                   value={newWeight}
                   onChange={(e) => setNewWeight(e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-xs text-[var(--text-muted)] block mb-1">Грудь (см)</label>
+                <label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Грудь (см)</label>
                 <input
                   type="number"
-                  className="input input-sm"
+                  className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none"
                   placeholder="100"
                   value={newChest}
                   onChange={(e) => setNewChest(e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-xs text-[var(--text-muted)] block mb-1">Талия (см)</label>
+                <label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Талия (см)</label>
                 <input
                   type="number"
-                  className="input input-sm"
+                  className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none"
                   placeholder="80"
                   value={newWaist}
                   onChange={(e) => setNewWaist(e.target.value)}
                 />
               </div>
               <div>
-                <label className="text-xs text-[var(--text-muted)] block mb-1">Бёдра (см)</label>
+                <label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Бёдра (см)</label>
                 <input
                   type="number"
-                  className="input input-sm"
+                  className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none"
                   placeholder="95"
                   value={newHips}
                   onChange={(e) => setNewHips(e.target.value)}
                 />
               </div>
             </div>
-            <button className="btn btn-primary btn-sm mt-4" onClick={handleAddMeasurement}>
-              Сохранить измерения
+            <button className="w-full mt-4 bg-[var(--accent-primary)] py-2 text-[10px] font-black uppercase italic tracking-widest text-black hover:bg-yellow-400 transition-colors" onClick={handleAddMeasurement}>
+              SAVE DATA LOG
             </button>
           </div>
         )}
@@ -558,23 +569,23 @@ function AccountContent() {
 
               {measurementHistory.length > 1 && (
                 <details className="text-sm">
-                  <summary className="cursor-pointer text-[var(--text-muted)] hover:text-[var(--text-secondary)]">
-                    История измерений ({measurementHistory.length})
+                  <summary className="cursor-pointer text-zinc-600 hover:text-white transition-colors uppercase text-[9px] font-black tracking-widest">
+                    History Logs ({measurementHistory.length})
                   </summary>
                   <div className="mt-2 space-y-2">
                     {measurementHistory.map((m) => (
                       <div
                         key={m.ts}
-                        className="flex justify-between items-center text-xs py-2 border-b border-[var(--border-default)] last:border-0"
+                        className="flex justify-between items-center text-[10px] font-mono py-2 border-b border-white/5 last:border-0"
                       >
-                        <span className="text-[var(--text-muted)]">
+                        <span className="text-zinc-600">
                           {new Date(m.ts).toLocaleDateString("ru-RU")}
                         </span>
-                        <div className="flex gap-4">
-                          {m.weight && <span>⚖️ {m.weight} кг</span>}
-                          {m.chest && <span>📐 {m.chest} см</span>}
-                          {m.waist && <span>📏 {m.waist} см</span>}
-                          {m.hips && <span>📐 {m.hips} см</span>}
+                        <div className="flex gap-4 text-zinc-400">
+                          {m.weight && <span>⚖️ {m.weight}kg</span>}
+                          {m.chest && <span>📐 {m.chest}cm</span>}
+                          {m.waist && <span>📏 {m.waist}cm</span>}
+                          {m.hips && <span>📐 {m.hips}cm</span>}
                         </div>
                       </div>
                     ))}
@@ -583,15 +594,16 @@ function AccountContent() {
               )}
             </>
           ) : (
-            <p className="text-[var(--text-muted)] text-sm text-center py-4">
-              Нет данных. {canEdit ? "Добавьте первое измерение для отслеживания прогресса." : ""}
+            <p className="text-zinc-600 text-[10px] font-mono uppercase text-center py-4">
+              NO DATA LOGGED. {canEdit ? "INITIALIZE TRACKING" : ""}
             </p>
           )}
         </div>
-      </div>
+      </section>
 
       {/* Характеристики */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+      <h3 className="text-[10px] font-black uppercase italic tracking-[0.2em] text-zinc-600 mb-4 px-1">Основные параметры</h3>
+      <div className="grid gap-3 grid-cols-2 mb-8">
         {stats.map((stat) => (
           <StatCard
             key={stat.stat}
@@ -604,118 +616,60 @@ function AccountContent() {
         ))}
       </div>
 
-      {/* Легенда уровней */}
-      <div className="card p-4 mb-8">
-        <h3 className="text-sm font-medium text-[var(--text-muted)] mb-3">
-          Уровни нормативов тренера
-        </h3>
-        <div className="flex flex-wrap gap-2">
-          {STANDARD_LEVELS.map((level) => (
-            <span
-              key={level.id}
-              className="px-3 py-1 rounded-full text-xs font-medium"
-              style={{
-                backgroundColor: `${level.color}20`,
-                color: level.color,
-                border: `1px solid ${level.color}40`,
-              }}
-            >
-              {level.name}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* Список дисциплин */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">
-            {selectedStat
-              ? `${stats.find((s) => s.stat === selectedStat)?.name ?? "Дисциплины"}`
-              : "Все дисциплины"}
-          </h3>
-          <button
-            onClick={() => setShowAllDisciplines(!showAllDisciplines)}
-            className="btn btn-ghost btn-sm"
-          >
-            {showAllDisciplines ? "Скрыть пустые" : "Показать все"}
-          </button>
-        </div>
+      <div className="space-y-6">
+        {Object.entries(groupedAchievements).map(([category, items]) => {
+          const visibleItems = showAllDisciplines
+            ? items
+            : items.filter((i) => i.value !== null);
 
-        <div className="divide-y divide-[var(--border-default)]">
-          {Object.entries(groupedAchievements).map(([category, items]) => {
-            const visibleItems = showAllDisciplines
-              ? items
-              : items.filter((i) => i.value !== null);
+          if (visibleItems.length === 0) return null;
 
-            if (visibleItems.length === 0) return null;
-
-            return (
-              <div key={category}>
-                <div className="px-4 py-2 bg-[var(--bg-secondary)] text-sm font-medium text-[var(--text-muted)]">
-                  {category}
-                </div>
+          return (
+            <div key={category} className="animate-fadeIn">
+              <h4 className="text-[10px] font-black uppercase italic tracking-widest text-zinc-500 mb-3 px-1 border-b border-white/5 pb-2">
+                {category}
+              </h4>
+              <div className="border border-white/5 bg-zinc-900/20 divide-y divide-white/5">
                 {visibleItems.map((item) => (
                   <DisciplineRow
                     key={item.discipline.slug}
                     item={item}
                     isExpanded={expandedDisciplines.has(item.discipline.slug)}
                     onToggle={() => {
-                      const newSet = new Set(expandedDisciplines);
-                      if (newSet.has(item.discipline.slug)) {
-                        newSet.delete(item.discipline.slug);
-                      } else {
-                        newSet.add(item.discipline.slug);
-                      }
-                      setExpandedDisciplines(newSet);
+                      const next = new Set(expandedDisciplines);
+                      if (next.has(item.discipline.slug))
+                        next.delete(item.discipline.slug);
+                      else next.add(item.discipline.slug);
+                      setExpandedDisciplines(next);
                     }}
                   />
                 ))}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          );
+        })}
       </div>
 
-      {/* ══════════════════════════════════════════════════════════════
-          ADMIN: Управление пользователями
-          ══════════════════════════════════════════════════════════════ */}
+      {/* Admin Controls */}
       {isCurrentUserAdmin && (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">👥 Управление пользователями</h3>
-            <button
-              onClick={() => {
-                if (confirm("Удалить ВСЕХ пользователей? Это действие необратимо!")) {
-                  clearAllUsers();
-                  window.location.reload();
-                }
-              }}
-              className="btn btn-ghost btn-sm text-red-500"
-            >
-              🗑️ Очистить всех
-            </button>
-          </div>
-
-          <div className="divide-y divide-[var(--border-default)]">
+        <div className="mt-12 pt-8 border-t border-white/10">
+          <h3 className="text-[10px] font-black uppercase italic tracking-[0.2em] text-red-500 mb-4 px-1">Управление базой</h3>
+          <div className="border border-red-500/20 bg-red-500/5 divide-y divide-red-500/10">
             {users.map((u) => (
               <div key={u.id} className="px-4 py-3 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  {u.avatar && isBase64Image(u.avatar) ? (
-                    <img src={u.avatar} alt="avatar" className="w-8 h-8 rounded-full object-cover" />
-                  ) : (
-                    <span className="text-2xl">{u.avatar || "👤"}</span>
-                  )}
+                  {renderAvatar(u, "sm")}
                   <div>
-                    <div className="font-medium">
-                      {u.name || "(без имени)"}
-                      {u.role === "admin" && <span className="ml-2 text-xs text-yellow-500">👑 Админ</span>}
+                    <div className="text-[10px] font-bold uppercase text-white">
+                      {u.name || "UNNAMED"}
+                      {u.role === "admin" && <span className="ml-2 text-yellow-500">[ADM]</span>}
                     </div>
-                    <div className="text-xs text-[var(--text-muted)]">ID: {u.id.slice(0, 8)}...</div>
+                    <div className="text-[8px] font-mono text-zinc-600">UID: {u.id.slice(0, 8)}</div>
                   </div>
                 </div>
 
-                {u.id !== activeUserId && (
+                {u.id !== activeUserId ? (
                   <button
                     onClick={() => {
                       if (confirm(`Удалить пользователя "${u.name}"?`)) {
@@ -724,21 +678,31 @@ function AccountContent() {
                         saveUsers(updated);
                       }
                     }}
-                    className="btn btn-ghost btn-sm text-red-500"
+                    className="text-[8px] font-black uppercase text-red-500 hover:text-red-400"
                   >
-                    🗑️ Удалить
+                    [ DELETE ]
                   </button>
-                )}
-
-                {u.id === activeUserId && (
-                  <span className="text-xs text-[var(--text-muted)]">(текущий)</span>
+                ) : (
+                  <span className="text-[8px] font-mono text-zinc-700 uppercase">Active Now</span>
                 )}
               </div>
             ))}
           </div>
+
+          <button
+            onClick={() => {
+              if (confirm("Удалить ВСЕХ пользователей? Это действие необратимо!")) {
+                clearAllUsers();
+                window.location.reload();
+              }
+            }}
+            className="w-full mt-4 py-2 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-colors"
+          >
+            Purge All Database Records
+          </button>
         </div>
       )}
-    </main>
+    </div>
   );
 }
 
@@ -758,15 +722,15 @@ function MeasurementCard({
   icon: string;
 }) {
   return (
-    <div className="text-center p-3 rounded-lg bg-[var(--bg-secondary)]">
-      <div className="text-2xl mb-1">{icon}</div>
-      <div className="text-xl font-bold">
+    <div className="flex flex-col items-center justify-center p-3 border border-white/5 bg-white/5 group hover:bg-white/10 transition-colors">
+      <div className="text-xl mb-1 opacity-50 grayscale group-hover:grayscale-0 transition-all">{icon}</div>
+      <div className="text-lg font-black italic text-white leading-none">
         {value !== undefined ? value : "—"}
         {value !== undefined && (
-          <span className="text-sm text-[var(--text-muted)] ml-1">{unit}</span>
+          <span className="text-[9px] font-mono text-zinc-600 uppercase ml-1 tracking-tighter">{unit}</span>
         )}
       </div>
-      <div className="text-xs text-[var(--text-muted)]">{label}</div>
+      <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mt-1">{label}</div>
     </div>
   );
 }
@@ -785,37 +749,37 @@ function StatCard({
   return (
     <button
       onClick={onClick}
-      className={`stat-card text-left ${isSelected ? "selected" : ""}`}
-      style={{
-        borderColor: isSelected ? stat.color : undefined,
-      }}
+      className={`relative p-4 text-left border transition-all duration-300 ${isSelected
+        ? "bg-white/10 border-[var(--accent-primary)] shadow-[0_0_20px_rgba(234,179,8,0.1)]"
+        : "bg-zinc-900/40 border-white/5 hover:border-white/20"
+        }`}
     >
-      <div className="flex items-center gap-3 mb-3">
-        <span className="text-2xl">{stat.icon}</span>
+      <div className="flex items-center gap-3 mb-3 relative z-10">
+        <span className="text-xl opacity-50 grayscale">{stat.icon}</span>
         <div className="flex-1">
-          <div className="flex justify-between items-center">
-            <span className="font-medium">{stat.name}</span>
-            <span className="text-lg font-bold" style={{ color: stat.color }}>
+          <div className="flex justify-between items-end">
+            <span className="text-[10px] font-black uppercase italic tracking-widest text-zinc-400 leading-none">{stat.name}</span>
+            <span className="text-xl font-black italic leading-none" style={{ color: stat.color }}>
               {stat.level}
             </span>
           </div>
-          <p className="text-xs text-[var(--text-muted)]">
-            {stat.disciplineCount > 0
-              ? `${stat.disciplineCount} дисциплин`
-              : "Нет данных"}
-          </p>
         </div>
       </div>
 
-      <div className="progress">
+      <div className="h-1 bg-white/5 relative overflow-hidden">
         <div
-          className="progress-bar"
+          className="h-full transition-all duration-1000"
           style={{
             width: `${barWidth}%`,
-            background: `linear-gradient(90deg, ${stat.color}80, ${stat.color})`,
+            backgroundColor: stat.color,
+            boxShadow: `0 0 10px ${stat.color}40`
           }}
         />
       </div>
+
+      <p className="text-[8px] font-mono text-zinc-600 uppercase mt-2 tracking-tighter">
+        {stat.disciplineCount} Recorded PRs
+      </p>
     </button>
   );
 }
@@ -834,87 +798,86 @@ function DisciplineRow({
   const percentages = show1RM ? getPercentageWeights(value) : [];
 
   return (
-    <div>
+    <div className="group">
       <div
-        className={`discipline-row ${show1RM ? "cursor-pointer" : ""}`}
+        className={`flex items-center gap-4 px-4 py-3 transition-colors ${show1RM ? "cursor-pointer hover:bg-white/5" : ""
+          }`}
         onClick={show1RM ? onToggle : undefined}
       >
-        <span className="discipline-icon">{discipline.icon}</span>
+        <span className="text-lg opacity-40 grayscale group-hover:grayscale-0 transition-all">{discipline.icon}</span>
 
-        <div className="discipline-info">
-          <div className="discipline-name flex items-center gap-2">
-            {discipline.name}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-2">
+            <h4 className="text-[10px] font-bold uppercase tracking-wider text-white truncate">
+              {discipline.name}
+            </h4>
             {show1RM && (
-              <span className="text-xs text-[var(--accent-primary)]">
-                {isExpanded ? "▼" : "▶"} %
+              <span className={`text-[8px] font-mono leading-none ${isExpanded ? "text-yellow-500" : "text-zinc-600"}`}>
+                [ {isExpanded ? "CLOSE DATA" : "SHOW %-RM"} ]
               </span>
             )}
           </div>
-          <div className="discipline-value">
+          <div className="text-xs font-mono text-zinc-500 mt-0.5">
             {value !== null ? (
               <>
-                {shouldUseTimeInput(discipline.unit, discipline.direction)
-                  ? formatSecondsToTime(value)
-                  : `${value} ${discipline.unit}`}
+                <span className="text-white font-bold">
+                  {shouldUseTimeInput(discipline.unit, discipline.direction)
+                    ? formatSecondsToTime(value)
+                    : `${value}${discipline.unit}`}
+                </span>
                 {show1RM && (
-                  <span className="text-[var(--text-muted)]"> (1ПМ)</span>
+                  <span className="text-[9px] text-zinc-700 ml-1">(1RM Equivalent)</span>
                 )}
               </>
             ) : (
-              "Нет данных"
+              "DATA MISSING"
             )}
           </div>
         </div>
 
         {level ? (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col items-end gap-1.5 min-w-[80px]">
             <span
-              className="badge"
+              className="px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.2em] border border-zinc-800"
               style={{
-                backgroundColor: `${level.color}20`,
                 color: level.color,
+                backgroundColor: `${level.color}10`,
+                borderColor: `${level.color}30`
               }}
             >
               {level.name}
             </span>
             {nextLevel && (
-              <div className="w-16">
-                <div className="progress">
-                  <div
-                    className="progress-bar"
-                    style={{
-                      width: `${progress}%`,
-                      backgroundColor: nextLevel.color,
-                    }}
-                  />
-                </div>
-                <p className="text-[10px] text-[var(--text-muted)] mt-0.5 text-center">
-                  {progress}% → {nextLevel.name}
-                </p>
+              <div className="w-full h-0.5 bg-white/5 rounded-full overflow-hidden">
+                <div
+                  className="h-full transition-all duration-1000"
+                  style={{
+                    width: `${progress}%`,
+                    backgroundColor: nextLevel.color,
+                  }}
+                />
               </div>
             )}
           </div>
-        ) : nextLevel ? (
-          <div className="text-xs text-[var(--text-muted)]">До {nextLevel.name}</div>
         ) : (
-          <div className="text-xs text-[var(--text-muted)]">—</div>
+          <div className="text-[8px] font-mono text-zinc-700">UNRANKED</div>
         )}
       </div>
 
       {isExpanded && show1RM && (
-        <div className="px-4 pb-4 pt-1 bg-[var(--bg-secondary)] border-t border-[var(--border-default)]">
-          <div className="text-xs text-[var(--text-muted)] mb-2">
-            Проценты от 1ПМ ({value} {discipline.unit})
+        <div className="px-4 pb-4 bg-black/40 border-t border-white/5 animate-in slide-in-from-top-1">
+          <div className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest py-3 text-center">
+            Calculated 1RM Percentages
           </div>
-          <div className="grid grid-cols-4 gap-2 text-center">
+          <div className="grid grid-cols-4 gap-1">
             {percentages.map(({ percent, weight }) => (
               <div
                 key={percent}
-                className="rounded-lg bg-[var(--bg-card)] px-2 py-2"
+                className="bg-zinc-900/50 p-2 border border-white/5 text-center"
               >
-                <div className="text-xs text-[var(--text-muted)]">{percent}%</div>
-                <div className="text-sm font-semibold text-white">
-                  {weight} {discipline.unit}
+                <div className="text-[8px] font-mono text-zinc-500 mb-1">{percent}%</div>
+                <div className="text-[10px] font-bold text-white font-mono leading-none">
+                  {weight}{discipline.unit}
                 </div>
               </div>
             ))}

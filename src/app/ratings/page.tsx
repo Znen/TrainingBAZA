@@ -149,20 +149,22 @@ export default function RatingsPage() {
   }, [users, list, store]);
 
   return (
-    <main className="pb-24">
+    <div className="pb-12">
       {/* Header */}
-      <div className="page-header">
-        <div>
-          <h1 className="page-title">🏆 Рейтинги</h1>
-          <p className="page-subtitle">Сравнение результатов участников {isCloudData && "(Облако)"}</p>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-3xl font-black italic uppercase text-white leading-none mb-2">
+          Зал <span className="text-[var(--accent-primary)]">Славы</span>
+        </h1>
+        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] border-l border-zinc-800 pl-3">
+          Глобальный рейтинг атлетов {isCloudData && "(Cloud Connected)"}
+        </p>
       </div>
 
       {/* Общий рейтинг */}
-      <section className="card mb-6">
-        <div className="card-header">
-          <h2 className="card-title">Общий рейтинг</h2>
-          <span className="badge badge-primary">{users.length} участников</span>
+      <section className="mb-10 bg-zinc-900/30 border border-white/5 overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center bg-white/5">
+          <h2 className="text-xs font-black uppercase italic tracking-widest text-zinc-400">Общий рейтинг</h2>
+          <span className="text-[10px] font-mono text-zinc-600 uppercase">{users.length} участников</span>
         </div>
 
         <div className="table-wrapper">
@@ -178,7 +180,7 @@ export default function RatingsPage() {
               {overallRows.map((row) => (
                 <tr
                   key={row.userId}
-                  className={row.userId === activeUserId ? "bg-[var(--accent-primary)]/10" : ""}
+                  className={`${row.userId === activeUserId ? "bg-[var(--accent-primary)]/5" : ""} border-b border-white/5 last:border-0`}
                 >
                   <td className="font-medium">
                     {row.place > 0 ? (
@@ -287,6 +289,6 @@ export default function RatingsPage() {
           Refreshed: {debug.lastFetch || "never"}
         </pre>
       </div>
-    </main>
+    </div>
   );
 }

@@ -10,24 +10,24 @@
    ──────────────────────────────────────────────────────────────── */
 :root {
   /* Фон */
-  --bg-primary: #0a0a0a;
-  --bg-secondary: #111111;
-  --bg-card: #18181b;
-  --bg-card-hover: #27272a;
-  --bg-elevated: #1e1e22;
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-card: #111111;
+  --bg-card-hover: #1a1a1a;
+  --bg-elevated: #151515;
 
   /* Текст */
-  --text-primary: #fafafa;
+  --text-primary: #ffffff;
   --text-secondary: #a1a1aa;
-  --text-muted: #71717a;
+  --text-muted: #52525b;
 
   /* Границы */
-  --border-default: #27272a;
-  --border-subtle: #3f3f46;
+  --border-default: #1a1a1a;
+  --border-subtle: #262626;
 
-  /* Акценты */
-  --accent-primary: #3b82f6;
-  --accent-primary-hover: #60a5fa;
+  /* Акценты - BAZA YELLOW */
+  --accent-primary: #eab308; /* yellow-500 */
+  --accent-primary-hover: #facc15; /* yellow-400 */
   --accent-success: #22c55e;
   --accent-warning: #f59e0b;
   --accent-danger: #ef4444;
@@ -39,24 +39,24 @@
   --rpg-flexibility: #06b6d4;
 
   /* Градиенты */
-  --gradient-hero: linear-gradient(135deg, #1e1e22 0%, #0a0a0a 100%);
-  --gradient-card: linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 100%);
+  --gradient-hero: linear-gradient(135deg, #111111 0%, #000000 100%);
+  --gradient-card: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, transparent 100%);
 
   /* Тени */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.5);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.6);
-  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.8);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.9);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 1);
+  --shadow-glow: 0 0 20px rgba(234, 179, 8, 0.2);
 
   /* Радиусы */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
 
   /* Переходы */
-  --transition-fast: 150ms ease;
-  --transition-normal: 250ms ease;
+  --transition-fast: 100ms ease;
+  --transition-normal: 200ms ease;
   --transition-slow: 400ms ease;
 }
 

@@ -99,17 +99,8 @@ export default function Home() {
   if (loadError) return <div className="p-4 text-red-500">Ошибка загрузки программы</div>;
 
   return (
-    <div className="min-h-screen pb-24 pt-safe bg-black text-white selection:bg-yellow-500/30">
-
-      {/* Top Bar */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-md border-b border-white/5">
-        <div className="flex items-center justify-between px-4 h-14 max-w-lg mx-auto w-full">
-          <h1 className="text-lg font-bold tracking-tighter uppercase italic">Training<span className="text-yellow-500">Baza</span></h1>
-          <UserSwitcher />
-        </div>
-      </header>
-
-      <main className="max-w-lg mx-auto px-4 pt-16">
+    <div className="selection:bg-yellow-500/30">
+      <div className="max-w-lg mx-auto">
 
         {/* DAILY QUOTE */}
         <div className="mb-6 opacity-40 select-none">
@@ -306,22 +297,7 @@ export default function Home() {
             </div>
           )}
         </div>
-      </main>
-
-      {/* Nav */}
-      <nav className="fixed bottom-0 left-0 right-0 border-t border-zinc-900 bg-black/95 backdrop-blur-xl pb-safe z-50">
-        <div className="flex justify-around items-center h-16 max-w-lg mx-auto">
-          <Link href="/" className="flex flex-col items-center gap-1 text-white scale-110 transition-all">
-            <span className="text-xl opacity-80">🏠</span>
-          </Link>
-          <Link href="/results" className="flex flex-col items-center gap-1 text-zinc-600 hover:text-white transition-colors">
-            <span className="text-xl opacity-60">📊</span>
-          </Link>
-          <Link href="/account" className="flex flex-col items-center gap-1 text-zinc-600 hover:text-white transition-colors">
-            <span className="text-xl opacity-60">👤</span>
-          </Link>
-        </div>
-      </nav>
+      </div>
 
       {/* DEBUG SECTION */}
       <DebugFooter user={user} activeProgram={activeProgram} loadError={loadError} viewDate={viewDate} />
