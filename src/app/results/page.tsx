@@ -37,6 +37,7 @@ type Discipline = {
   icon?: string;
 };
 
+import { addCloudResult } from "@/lib/cloudSync";
 import { useAuth } from "@/components/AuthProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -176,11 +177,22 @@ function ResultsContent() {
 
     if (numericValue === null) return;
 
+    // 1. Update Local
     setStore((prev) => {
       const next = addResult(prev, targetUserId, slug, numericValue as number);
       saveHistoryStore(next);
       return next;
     });
+
+    // 2. Update Cloud if enabled
+    if (authUser && (targetUserId === authUser.id || isCurrentUserAdmin)) {
+      addCloudResult({
+        user_id: targetUserId,
+        discipline_slug: slug,
+        value: numericValue as number,
+        recorded_at: new Date().toISOString()
+      }).catch(err => console.error("Cloud sync failed:", err));
+    }
   };
 
   const switchTargetUser = (id: string) => {

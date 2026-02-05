@@ -36,7 +36,7 @@ import {
 import { formatSecondsToTime, shouldUseTimeInput } from "@/lib/timeUtils";
 import { getPercentageWeights } from "@/lib/oneRepMax";
 import { useAuth } from "@/components/AuthProvider";
-import { getCloudProfile, updateCloudProfile, type CloudProfile } from "@/lib/cloudSync";
+import { getCloudProfile, updateCloudProfile, addCloudMeasurement, type CloudProfile } from "@/lib/cloudSync";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function AccountPage() {
@@ -238,6 +238,19 @@ function AccountContent() {
     const updated = addMeasurement(users, viewingUserId, measurement);
     setUsers(updated);
     saveUsers(updated);
+
+    // 2. Update Cloud if enabled
+    if (authUser && (viewingUserId === authUser.id || isCurrentUserAdmin)) {
+      const ts = new Date().toISOString();
+      const promises = [];
+      if (measurement.weight) promises.push(addCloudMeasurement({ user_id: viewingUserId, type: 'weight', value: measurement.weight, recorded_at: ts }));
+      if (measurement.chest) promises.push(addCloudMeasurement({ user_id: viewingUserId, type: 'chest', value: measurement.chest, recorded_at: ts }));
+      if (measurement.waist) promises.push(addCloudMeasurement({ user_id: viewingUserId, type: 'waist', value: measurement.waist, recorded_at: ts }));
+      if (measurement.hips) promises.push(addCloudMeasurement({ user_id: viewingUserId, type: 'hips', value: measurement.hips, recorded_at: ts }));
+
+      Promise.all(promises).catch(err => console.error("Cloud measurement sync failed:", err));
+    }
+
     setShowMeasurementForm(false);
     setNewWeight("");
     setNewChest("");
