@@ -7,6 +7,7 @@ import {
   loadUsers,
   loadActiveUserId,
   saveActiveUserId,
+  saveUsers,
   isAdmin,
   canAddResultsFor,
 } from "@/lib/users";
@@ -36,6 +37,7 @@ type Discipline = {
   icon?: string;
 };
 
+import { useAuth } from "@/components/AuthProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function ResultsPage() {
@@ -72,6 +74,8 @@ function ResultsContent() {
   const [values, setValues] = useState<Record<string, string>>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
 
+  const { user: authUser, loading: authLoading } = useAuth();
+
   const activeUser = users.find((u) => u.id === activeUserId);
   const targetUser = users.find((u) => u.id === targetUserId);
   const isCurrentUserAdmin = isAdmin(activeUser);
@@ -80,13 +84,32 @@ function ResultsContent() {
   const history: HistoryBySlug = store[targetUserId] ?? {};
 
   useEffect(() => {
-    const u = loadUsers();
-    if (u.length === 0) return; // Пользователи создаются через регистрацию
+    let u = loadUsers();
+
+    // Если локальных пользователей нет, но мы вошли через облако — создаём запись
+    if (u.length === 0 && authUser && !authLoading) {
+      const newUser: User = {
+        id: authUser.id,
+        name: authUser.user_metadata?.name || "Пользователь",
+        email: authUser.email,
+        role: "user",
+        avatarType: "emoji",
+        measurements: []
+      };
+      u = [newUser];
+      saveUsers(u);
+    }
+
+    if (u.length === 0) return;
 
     setUsers(u);
 
     const savedActive = loadActiveUserId();
-    const initialActive = savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id;
+    // Если есть авторизованный пользователь, приоритет ему
+    const initialActive =
+      authUser ? authUser.id :
+        (savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id);
+
     setActiveUserId(initialActive);
     setTargetUserId(initialActive);
     saveActiveUserId(initialActive);
@@ -107,7 +130,7 @@ function ResultsContent() {
       }
     }
     setValues(initialValues);
-  }, [list]);
+  }, [list, authUser, authLoading]);
 
   // Обновить store и значения при смене целевого пользователя
   useEffect(() => {
@@ -246,43 +269,47 @@ function ResultsContent() {
 
                   return (
                     <div key={d.slug} className="discipline-row">
-                      <span className="discipline-icon">{d.icon ?? "📌"}</span>
+                      <span className="discipline-icon shrink-0">{d.icon ?? "📌"}</span>
 
-                      <div className="discipline-info">
-                        <div className="discipline-name">{d.name}</div>
+                      <div className="discipline-info min-w-0">
+                        <div className="discipline-name truncate leading-tight mb-0.5">{d.name}</div>
                         <div className="discipline-value">
                           {last ? (
-                            <>
-                              {isTimeInput
-                                ? formatSecondsToTime(last.value)
-                                : `${last.value} ${d.unit ?? ""}`}{" "}
-                              • {formatUtc(last.ts)}
-                            </>
+                            <div className="flex flex-wrap gap-x-2">
+                              <span className="text-white font-medium">
+                                {isTimeInput
+                                  ? formatSecondsToTime(last.value)
+                                  : `${last.value} ${d.unit ?? ""}`}
+                              </span>
+                              <span className="opacity-50">• {formatUtc(last.ts)}</span>
+                            </div>
                           ) : (
                             "Нет данных"
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <input
-                          className="input input-sm w-28 text-right"
-                          type="text"
-                          inputMode={isTimeInput ? "text" : "decimal"}
-                          placeholder={isTimeInput ? "MM:SS" : "введите"}
-                          value={values[d.slug] ?? ""}
-                          onChange={(e) => setValues((prev) => ({ ...prev, [d.slug]: e.target.value }))}
-                          onBlur={(e) => commitValue(d.slug, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") e.currentTarget.blur();
-                          }}
-                          disabled={!canAddResults}
-                        />
-                        {!isTimeInput && (
-                          <span className="w-12 text-right text-sm text-[var(--text-muted)]">
-                            {d.unit ?? ""}
-                          </span>
-                        )}
+                      <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                        <div className="relative">
+                          <input
+                            className="input input-sm w-24 text-right pr-8"
+                            type="text"
+                            inputMode={isTimeInput ? "text" : "decimal"}
+                            placeholder={isTimeInput ? "MM:SS" : "0"}
+                            value={values[d.slug] ?? ""}
+                            onChange={(e) => setValues((prev) => ({ ...prev, [d.slug]: e.target.value }))}
+                            onBlur={(e) => commitValue(d.slug, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.currentTarget.blur();
+                            }}
+                            disabled={!canAddResults}
+                          />
+                          {!isTimeInput && d.unit && (
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-600 font-mono pointer-events-none">
+                              {d.unit}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   );
