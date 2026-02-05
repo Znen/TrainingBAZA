@@ -301,27 +301,25 @@ function ResultsContent() {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <div className="relative">
-                          <input
-                            className={`input input-sm text-right ${isTimeInput ? 'w-24 px-3' : 'w-20 pr-9 pl-2'}`}
-                            type="text"
-                            inputMode={isTimeInput ? "text" : "decimal"}
-                            placeholder={isTimeInput ? "MM:SS" : "0"}
-                            value={values[d.slug] ?? ""}
-                            onChange={(e) => setValues((prev) => ({ ...prev, [d.slug]: e.target.value }))}
-                            onBlur={(e) => commitValue(d.slug, e.target.value)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") e.currentTarget.blur();
-                            }}
-                            disabled={!canAddResults}
-                          />
-                          {!isTimeInput && d.unit && (
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-600 font-mono pointer-events-none uppercase tracking-tighter">
-                              {d.unit}
-                            </span>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <input
+                          className={`input input-sm text-center font-mono ${isTimeInput ? 'w-24' : 'w-20'}`}
+                          type="text"
+                          inputMode={isTimeInput ? "text" : "decimal"}
+                          placeholder={isTimeInput ? "MM:SS" : "0"}
+                          value={values[d.slug] ?? ""}
+                          onChange={(e) => setValues((prev) => ({ ...prev, [d.slug]: e.target.value }))}
+                          onBlur={(e) => commitValue(d.slug, e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") e.currentTarget.blur();
+                          }}
+                          disabled={!canAddResults}
+                        />
+                        {!isTimeInput && d.unit && (
+                          <span className="text-[10px] text-zinc-500 font-mono w-4 text-left">
+                            {d.unit}
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
