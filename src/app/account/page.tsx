@@ -23,7 +23,7 @@ import {
   type User,
   type BodyMeasurement,
 } from "@/lib/users";
-import { loadHistoryStore, type HistoryBySlug } from "@/lib/results";
+import { loadHistoryStore, type HistoryBySlug, type HistoryStore, type HistoryItem } from "@/lib/results";
 import {
   getUserStats,
   getOverallLevel,
@@ -36,7 +36,14 @@ import {
 import { formatSecondsToTime, shouldUseTimeInput } from "@/lib/timeUtils";
 import { getPercentageWeights } from "@/lib/oneRepMax";
 import { useAuth } from "@/components/AuthProvider";
-import { getCloudProfile, updateCloudProfile, addCloudMeasurement, type CloudProfile } from "@/lib/cloudSync";
+import {
+  getCloudProfile,
+  updateCloudProfile,
+  addCloudMeasurement,
+  getAllCloudResults,
+  type CloudProfile,
+  type CloudResult
+} from "@/lib/cloudSync";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 export default function AccountPage() {
@@ -77,25 +84,74 @@ function AccountContent() {
   const [cloudProfile, setCloudProfile] = useState<CloudProfile | null>(null);
 
   useEffect(() => {
-    let u = loadUsers();
-    if (u.length === 0) {
+    const userList = loadUsers();
+    if (userList.length === 0) {
       // Создаём гостя без админ-прав (админ назначается через облако)
       const created = createUser("Гость", "user");
-      u = [created];
-      saveUsers(u);
+      userList.push(created);
+      saveUsers(userList);
     }
-    setUsers(u);
+    setUsers(userList);
 
+    // Initial Active User
     const savedActive = loadActiveUserId();
-    const initialActive =
-      savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id;
-    setActiveUserId(initialActive);
-    setViewingUserId(initialActive);
-    saveActiveUserId(initialActive);
+    let initialActive = savedActive && userList.some((u) => u.id === savedActive) ? savedActive : userList[0]?.id;
 
-    const store = loadHistoryStore(initialActive);
-    setHistory(store[initialActive] ?? {});
-  }, []);
+    // If auth user exists, prioritize them
+    if (authUser) {
+      initialActive = authUser.id;
+    }
+
+    if (!initialActive) return;
+
+    setActiveUserId(initialActive);
+    // If we are admin, we might be viewing someone else. Default to active.
+    if (!viewingUserId) setViewingUserId(initialActive);
+
+    // LOAD DATA (Local + Cloud)
+    const loadData = async () => {
+      // 1. Local Data
+      let currentStore: HistoryStore = {};
+      // Ensure initialActive is valid before loading history
+      if (initialActive) {
+        currentStore = loadHistoryStore(initialActive);
+      }
+
+      // 2. Cloud Data (if authenticated)
+      if (authUser) {
+        try {
+          const cloudResults = await getAllCloudResults();
+
+          // Merge into store
+          cloudResults.forEach((r: CloudResult) => {
+            if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
+            if (!currentStore[r.user_id][r.discipline_slug]) {
+              currentStore[r.user_id][r.discipline_slug] = [];
+            }
+            // Avoid duplicates by checking if an item with the same timestamp and value already exists
+            const exists = currentStore[r.user_id][r.discipline_slug].some(
+              (local: HistoryItem) => local.ts === r.recorded_at && local.value === Number(r.value)
+            );
+
+            if (!exists) {
+              currentStore[r.user_id][r.discipline_slug].push({
+                ts: r.recorded_at,
+                value: Number(r.value),
+              });
+            }
+          });
+
+        } catch (e) {
+          console.error("Failed to load cloud results", e);
+        }
+      }
+      // Set the history for the currently active user
+      setHistory(currentStore[initialActive] ?? {});
+    };
+
+    loadData();
+
+  }, [authUser, authLoading]);
 
   // Обновить историю при смене просматриваемого пользователя
   useEffect(() => {

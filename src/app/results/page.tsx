@@ -14,12 +14,17 @@ import {
 import {
   HistoryStore,
   HistoryBySlug,
+  HistoryItem,
   loadHistoryStore,
   saveHistoryStore,
   getLatest,
   addResult,
   formatUtc,
 } from "@/lib/results";
+import {
+  getAllCloudResults,
+  CloudResult
+} from "@/lib/cloudSync";
 import {
   parseTimeToSeconds,
   formatSecondsToTime,
@@ -110,6 +115,7 @@ function ResultsContent() {
 
     const savedActive = loadActiveUserId();
     // Если есть авторизованный пользователь, приоритет ему
+    // Если есть авторизованный пользователь, приоритет ему
     const initialActive =
       authUser ? authUser.id :
         (savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id);
@@ -118,22 +124,57 @@ function ResultsContent() {
     setTargetUserId(initialActive);
     saveActiveUserId(initialActive);
 
-    const s = loadHistoryStore(initialActive);
-    setStore(s);
+    const loadData = async () => {
+      // 1. Local Data
+      let currentStore: HistoryStore = {};
+      if (initialActive) {
+        currentStore = loadHistoryStore(initialActive);
+      }
 
-    const h = s[initialActive] ?? {};
-    const initialValues: Record<string, string> = {};
-    for (const d of list) {
-      const last = getLatest(h[d.slug]);
-      if (last) {
-        if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
-          initialValues[d.slug] = formatSecondsToTime(last.value);
-        } else {
-          initialValues[d.slug] = String(last.value);
+      // 2. Cloud Data (if authenticated)
+      if (authUser) {
+        try {
+          const cloudResults = await getAllCloudResults();
+          cloudResults.forEach((r: CloudResult) => {
+            if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
+            if (!currentStore[r.user_id][r.discipline_slug]) {
+              currentStore[r.user_id][r.discipline_slug] = [];
+            }
+            const exists = currentStore[r.user_id][r.discipline_slug].some(
+              (local: HistoryItem) => local.ts === r.recorded_at && local.value === Number(r.value)
+            );
+            if (!exists) {
+              currentStore[r.user_id][r.discipline_slug].push({
+                ts: r.recorded_at,
+                value: Number(r.value),
+              });
+            }
+          });
+        } catch (err) {
+          console.error("Failed to load cloud results in Results:", err);
         }
       }
-    }
-    setValues(initialValues);
+
+      setStore(currentStore);
+
+      // Initialize values
+      const h = currentStore[initialActive] ?? {};
+      const initialValues: Record<string, string> = {};
+      for (const d of list) {
+        const last = getLatest(h[d.slug]);
+        if (last) {
+          if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
+            initialValues[d.slug] = formatSecondsToTime(last.value);
+          } else {
+            initialValues[d.slug] = String(last.value);
+          }
+        }
+      }
+      setValues(initialValues);
+    };
+
+    loadData();
+
   }, [list, authUser, authLoading]);
 
   // Обновить store и значения при смене целевого пользователя
