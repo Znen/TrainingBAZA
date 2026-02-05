@@ -23,6 +23,7 @@ import {
 } from "@/lib/results";
 import {
   getAllCloudResults,
+  getCloudProfile,
   CloudResult
 } from "@/lib/cloudSync";
 import {
@@ -94,19 +95,34 @@ function ResultsContent() {
 
     // Если мы авторизованы, убеждаемся, что пользователь есть в списке
     if (authUser && !authLoading) {
-      const exists = u.find(x => x.id === authUser.id);
-      if (!exists) {
-        const newUser: User = {
-          id: authUser.id,
-          name: authUser.user_metadata?.name || "Пользователь",
-          email: authUser.email,
-          role: "user",
-          avatarType: "emoji",
-          measurements: []
-        };
-        u = [...u, newUser];
-        saveUsers(u);
-      }
+      getCloudProfile(authUser.id).then(profile => {
+        let currentList = loadUsers();
+        const exists = currentList.find(x => x.id === authUser.id);
+
+        const role = (profile?.role === 'admin') ? 'admin' : 'user';
+        const name = profile?.name || authUser.user_metadata?.name || "Пользователь";
+
+        if (exists) {
+          if (exists.role !== role || (profile?.name && exists.name !== profile.name)) {
+            exists.role = role;
+            exists.name = name;
+            saveUsers(currentList);
+            setUsers([...currentList]);
+          }
+        } else {
+          const newUser: User = {
+            id: authUser.id,
+            name: name,
+            email: authUser.email,
+            role: role,
+            avatarType: "emoji",
+            measurements: []
+          };
+          currentList = [...currentList, newUser];
+          saveUsers(currentList);
+          setUsers(currentList);
+        }
+      });
     }
 
     if (u.length === 0) return;
