@@ -271,28 +271,28 @@ function ResultsContent() {
                     <div key={d.slug} className="discipline-row">
                       <span className="discipline-icon shrink-0">{d.icon ?? "📌"}</span>
 
-                      <div className="discipline-info min-w-0">
-                        <div className="discipline-name truncate leading-tight mb-0.5">{d.name}</div>
-                        <div className="discipline-value">
+                      <div className="discipline-info min-w-0 pr-2 flex-1">
+                        <div className="discipline-name leading-snug mb-0.5 text-sm font-medium text-white">{d.name}</div>
+                        <div className="discipline-value text-[10px] text-zinc-500">
                           {last ? (
                             <div className="flex flex-wrap gap-x-2">
-                              <span className="text-white font-medium">
+                              <span className="text-zinc-300">
                                 {isTimeInput
                                   ? formatSecondsToTime(last.value)
                                   : `${last.value} ${d.unit ?? ""}`}
                               </span>
-                              <span className="opacity-50">• {formatUtc(last.ts)}</span>
+                              <span className="opacity-40">• {formatUtc(last.ts)}</span>
                             </div>
                           ) : (
-                            "Нет данных"
+                            <span className="italic opacity-50">Нет данных</span>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                      <div className="flex items-center gap-1.5 shrink-0">
                         <div className="relative">
                           <input
-                            className="input input-sm w-24 text-right pr-8"
+                            className={`input input-sm text-right ${isTimeInput ? 'w-24 px-3' : 'w-20 pr-9 pl-2'}`}
                             type="text"
                             inputMode={isTimeInput ? "text" : "decimal"}
                             placeholder={isTimeInput ? "MM:SS" : "0"}
@@ -305,7 +305,7 @@ function ResultsContent() {
                             disabled={!canAddResults}
                           />
                           {!isTimeInput && d.unit && (
-                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-600 font-mono pointer-events-none">
+                            <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-zinc-600 font-mono pointer-events-none uppercase tracking-tighter">
                               {d.unit}
                             </span>
                           )}
