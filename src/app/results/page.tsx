@@ -309,7 +309,7 @@ function ResultsContent() {
                           className={`input input-sm text-center font-mono ${isTimeInput ? 'w-24' : 'w-20'}`}
                           type="text"
                           inputMode={isTimeInput ? "text" : "decimal"}
-                          placeholder={isTimeInput ? "MM:SS" : "0"}
+                          placeholder={isTimeInput ? "ММ:СС" : "0"}
                           value={values[d.slug] ?? ""}
                           onChange={(e) => setValues((prev) => ({ ...prev, [d.slug]: e.target.value }))}
                           onBlur={(e) => commitValue(d.slug, e.target.value)}

@@ -64,8 +64,11 @@ export function formatTimeDisplay(totalSeconds: number): string {
 /**
  * Проверяет, является ли единица измерения временной
  */
+/**
+ * Проверяет, является ли единица измерения временной
+ */
 export function isTimeUnit(unit: string): boolean {
-    return unit === 'sec' || unit === 'min';
+    return unit === 'sec' || unit === 'min' || unit === 'сек';
 }
 
 /**
@@ -73,5 +76,5 @@ export function isTimeUnit(unit: string): boolean {
  * (для дисциплин >60 сек, где меньше = лучше)
  */
 export function shouldUseTimeInput(unit: string, direction: string): boolean {
-    return unit === 'sec' && direction === 'lower_better';
+    return (unit === 'sec' || unit === 'сек') && direction === 'lower_better';
 }

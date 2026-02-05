@@ -156,7 +156,7 @@ export default function RatingsPage() {
           Зал <span className="text-[var(--accent-primary)]">Славы</span>
         </h1>
         <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] border-l border-zinc-800 pl-3">
-          Глобальный рейтинг атлетов {isCloudData && "(Cloud Connected)"}
+          Глобальный рейтинг атлетов {isCloudData && "(Облако подключено)"}
         </p>
       </div>
 
@@ -274,19 +274,19 @@ export default function RatingsPage() {
       {/* System Debug */}
       <div className="mt-12 p-4 border-t border-white/5 opacity-50 text-[10px] font-mono">
         <div className="flex justify-between items-center mb-2">
-          <span className="uppercase tracking-widest text-zinc-500 font-bold">System Debug</span>
+          <span className="uppercase tracking-widest text-zinc-500 font-bold">Системная отладка</span>
           <button onClick={loadData} className="px-2 py-0.5 border border-zinc-700 rounded hover:bg-zinc-800 transition-colors">
-            [DEBUG: Force Refresh]
+            [ОТЛАДКА: Обновить]
           </button>
         </div>
         <pre className="text-zinc-400">
-          Cloud: {isCloudData ? "Active" : "Disabled"}{"\n"}
-          User: {authUser?.email || "guest"}{"\n"}
-          Local Active ID: {activeUserId}{"\n"}
-          Cloud ID: {authUser?.id || "none"}{"\n"}
-          Profiles: {debug.profiles}{"\n"}
-          Raw Results: {debug.results}{"\n"}
-          Refreshed: {debug.lastFetch || "never"}
+          Облако: {isCloudData ? "Активно" : "Отключено"}{"\n"}
+          Пользователь: {authUser?.email || "гость"}{"\n"}
+          Локальный ID: {activeUserId}{"\n"}
+          Облачный ID: {authUser?.id || "нет"}{"\n"}
+          Профилей: {debug.profiles}{"\n"}
+          Записей: {debug.results}{"\n"}
+          Обновлено: {debug.lastFetch || "никогда"}
         </pre>
       </div>
     </div>

@@ -292,7 +292,7 @@ function AccountContent() {
         {/* Селектор пользователя для админа */}
         {isCurrentUserAdmin && (
           <div className="flex items-center gap-2 bg-white/5 border border-white/5 px-2 py-1 rounded">
-            <span className="text-[9px] font-mono text-zinc-600 uppercase">View:</span>
+            <span className="text-[9px] font-mono text-zinc-600 uppercase">Просмотр:</span>
             <select
               className="bg-transparent text-[10px] font-mono text-zinc-400 outline-none cursor-pointer"
               value={viewingUserId}
@@ -340,7 +340,7 @@ function AccountContent() {
                 boxShadow: `0 0 15px ${rank.color}40`,
               }}
             >
-              LVL {overallLevel}
+              УРВ {overallLevel}
             </div>
             {viewingUser?.role === "admin" && (
               <div className="absolute -top-1 -left-1 bg-yellow-500 text-black rounded-full w-6 h-6 flex items-center justify-center text-xs">
@@ -368,14 +368,14 @@ function AccountContent() {
                     className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-all ${editAvatarType === "emoji" ? "bg-yellow-500 text-black border-yellow-500" : "bg-white/5 text-zinc-500 border-white/5 hover:text-white"}`}
                     onClick={() => setEditAvatarType("emoji")}
                   >
-                    😀 Emoji
+                    😀 Эмодзи
                   </button>
                   <button
                     type="button"
                     className={`px-3 py-1 text-[10px] font-black uppercase tracking-widest border transition-all ${editAvatarType === "photo" ? "bg-yellow-500 text-black border-yellow-500" : "bg-white/5 text-zinc-500 border-white/5 hover:text-white"}`}
                     onClick={() => setEditAvatarType("photo")}
                   >
-                    📷 Photo
+                    📷 Фото
                   </button>
                 </div>
 
@@ -409,7 +409,7 @@ function AccountContent() {
                       className="px-3 py-1 text-[10px] font-black uppercase border border-white/20 text-white hover:bg-white/5 transition-colors"
                       onClick={() => fileInputRef.current?.click()}
                     >
-                      📷 Upload Avatar
+                      📷 Загрузить фото
                     </button>
                     {editAvatar && isBase64Image(editAvatar) && (
                       <div className="mt-2 text-center md:text-left">
@@ -425,13 +425,13 @@ function AccountContent() {
 
                 <div className="flex gap-2">
                   <button className="px-4 py-1.5 bg-yellow-500 text-black text-[10px] font-black uppercase tracking-widest hover:bg-yellow-400" onClick={handleSaveProfile}>
-                    Save Changes
+                    Сохранить
                   </button>
                   <button
                     className="px-4 py-1.5 bg-white/5 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10"
                     onClick={() => setIsEditingProfile(false)}
                   >
-                    Cancel
+                    Отмена
                   </button>
                 </div>
               </div>
@@ -465,7 +465,7 @@ function AccountContent() {
                     className="mt-4 text-[10px] font-mono uppercase tracking-widest text-zinc-500 hover:text-white border-b border-zinc-800 hover:border-white transition-all"
                     onClick={handleStartEditProfile}
                   >
-                    Edit Profile
+                    Ред. Профиль
                   </button>
                 )}
               </>
@@ -481,7 +481,7 @@ function AccountContent() {
             >
               {overallLevel}
             </div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mt-1">Tier Level</p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-600 mt-1">Ранг (Уровень)</p>
           </div>
         </div>
       </div>
@@ -495,7 +495,7 @@ function AccountContent() {
               className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 hover:text-white transition-colors"
               onClick={() => setShowMeasurementForm(!showMeasurementForm)}
             >
-              {showMeasurementForm ? "[ Hide ]" : "[ LOG NEW ]"}
+              {showMeasurementForm ? "[ СКРЫТЬ ]" : "[ ВНЕСТИ ]"}
             </button>
           )}
         </div>
@@ -545,7 +545,7 @@ function AccountContent() {
               </div>
             </div>
             <button className="w-full mt-4 bg-[var(--accent-primary)] py-2 text-[10px] font-black uppercase italic tracking-widest text-black hover:bg-yellow-400 transition-colors" onClick={handleAddMeasurement}>
-              SAVE DATA LOG
+              СОХРАНИТЬ ДАННЫЕ
             </button>
           </div>
         )}
@@ -583,7 +583,7 @@ function AccountContent() {
               {measurementHistory.length > 1 && (
                 <details className="text-sm">
                   <summary className="cursor-pointer text-zinc-600 hover:text-white transition-colors uppercase text-[9px] font-black tracking-widest">
-                    History Logs ({measurementHistory.length})
+                    История измерений ({measurementHistory.length})
                   </summary>
                   <div className="mt-2 space-y-2">
                     {measurementHistory.map((m) => (
@@ -608,7 +608,7 @@ function AccountContent() {
             </>
           ) : (
             <p className="text-zinc-600 text-[10px] font-mono uppercase text-center py-4">
-              NO DATA LOGGED. {canEdit ? "INITIALIZE TRACKING" : ""}
+              НЕТ ДАННЫХ. {canEdit ? "НАЧНИТЕ ОТСЛЕЖИВАНИЕ" : ""}
             </p>
           )}
         </div>
@@ -675,7 +675,7 @@ function AccountContent() {
                   {renderAvatar(u, "sm")}
                   <div>
                     <div className="text-[10px] font-bold uppercase text-white">
-                      {u.name || "UNNAMED"}
+                      {u.name || "БЕЗ ИМЕНИ"}
                       {u.role === "admin" && <span className="ml-2 text-yellow-500">[ADM]</span>}
                     </div>
                     <div className="text-[8px] font-mono text-zinc-600">UID: {u.id.slice(0, 8)}</div>
@@ -693,10 +693,10 @@ function AccountContent() {
                     }}
                     className="text-[8px] font-black uppercase text-red-500 hover:text-red-400"
                   >
-                    [ DELETE ]
+                    [ УДАЛИТЬ ]
                   </button>
                 ) : (
-                  <span className="text-[8px] font-mono text-zinc-700 uppercase">Active Now</span>
+                  <span className="text-[8px] font-mono text-zinc-700 uppercase">Активен</span>
                 )}
               </div>
             ))}
@@ -711,7 +711,7 @@ function AccountContent() {
             }}
             className="w-full mt-4 py-2 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-colors"
           >
-            Purge All Database Records
+            Удалить все данные БД
           </button>
         </div>
       )}

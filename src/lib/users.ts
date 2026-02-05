@@ -90,7 +90,7 @@ export function saveActiveUserId(id: string): void {
 export function createUser(name?: string, role: UserRole = "user"): User {
     return {
         id: safeId(),
-        name: name ?? `User ${Date.now()}`,
+        name: name ?? `Атлет ${Date.now()}`,
         role,
         avatarType: "emoji",
         measurements: [],
