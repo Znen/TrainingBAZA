@@ -334,9 +334,9 @@ export default function UserSwitcher() {
                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-blue-500 bg-zinc-800 hover:bg-zinc-700 text-sm text-white cursor-pointer transition-colors"
                 >
                     {renderAvatar(displayAvatar)}
-                    <span>{displayName}</span>
-                    {showAdminBadge && <span className="text-xs">👑</span>}
-                    <span className="text-xs opacity-50">{showDropdown ? "▲" : "▼"}</span>
+                    <span className="max-w-[80px] sm:max-w-[150px] truncate">{displayName}</span>
+                    {showAdminBadge && <span className="text-xs shrink-0">👑</span>}
+                    <span className="text-xs opacity-50 shrink-0">{showDropdown ? "▲" : "▼"}</span>
                 </button>
             </div>
 
