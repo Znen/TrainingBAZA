@@ -24,7 +24,9 @@ import {
 import {
   getAllCloudResults,
   getCloudProfile,
-  CloudResult
+  getAllCloudProfiles,
+  CloudResult,
+  type CloudProfile
 } from "@/lib/cloudSync";
 import {
   parseTimeToSeconds,
@@ -95,22 +97,22 @@ function ResultsContent() {
 
     // Если мы авторизованы, убеждаемся, что пользователь есть в списке
     if (authUser && !authLoading) {
-      getCloudProfile(authUser.id).then(profile => {
+      getCloudProfile(authUser.id).then(async (profile) => {
         let currentList = loadUsers();
-        const exists = currentList.find(x => x.id === authUser.id);
 
+        // 1. Update current user in list
         const role = (profile?.role === 'admin') ? 'admin' : 'user';
         const name = profile?.name || authUser.user_metadata?.name || "Пользователь";
 
-        if (exists) {
-          if (exists.role !== role || (profile?.name && exists.name !== profile.name)) {
-            exists.role = role;
-            exists.name = name;
-            saveUsers(currentList);
-            setUsers([...currentList]);
-          }
+        // Remove duplicates of current authUser if any existed incorrectly
+        // currentList = currentList.filter(u => u.id !== authUser.id);
+
+        let currentUser = currentList.find(x => x.id === authUser.id);
+        if (currentUser) {
+          currentUser.role = role;
+          currentUser.name = name;
         } else {
-          const newUser: User = {
+          currentUser = {
             id: authUser.id,
             name: name,
             email: authUser.email,
@@ -118,10 +120,41 @@ function ResultsContent() {
             avatarType: "emoji",
             measurements: []
           };
-          currentList = [...currentList, newUser];
-          saveUsers(currentList);
-          setUsers(currentList);
+          currentList.push(currentUser);
         }
+
+        // 2. If Admin, fetch ALL profiles
+        if (role === 'admin') {
+          try {
+            const allProfiles = await getAllCloudProfiles();
+            allProfiles.forEach((p: CloudProfile) => {
+              const existing = currentList.find(u => u.id === p.id);
+              if (!existing) {
+                currentList.push({
+                  id: p.id,
+                  name: p.name,
+                  role: p.role as any,
+                  avatarType: (p.avatar_type as any) || "emoji",
+                  measurements: []
+                });
+              } else {
+                // Sync details
+                existing.name = p.name;
+                existing.role = p.role as any;
+              }
+            });
+          } catch (err) {
+            console.error("Failed to load all profiles", err);
+          }
+        }
+
+        // 3. Deduplicate invalid entries (fallback)
+        const uniqueMap = new Map();
+        currentList.forEach(u => uniqueMap.set(u.id, u));
+        const dedupedList = Array.from(uniqueMap.values());
+
+        saveUsers(dedupedList);
+        setUsers(dedupedList);
       });
     }
 
