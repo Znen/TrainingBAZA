@@ -80,12 +80,40 @@ const DisciplineRow = ({ item, isExpanded, onToggle }: { item: any, isExpanded: 
       <div onClick={onToggle} className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
         <span className="text-lg grayscale group-hover:grayscale-0 transition-all">{d.icon}</span>
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-bold text-zinc-200 truncate">{d.name}</div>
-          {hasValue && <div className="text-[10px] font-mono text-zinc-500">{item.formatted} • {item.date}</div>}
+          <div className="flex justify-between items-end pr-4">
+            <div className="text-sm font-bold text-zinc-200 truncate">{d.name}</div>
+            {hasValue && (
+              <div className="text-[9px] font-mono text-zinc-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                {item.progress}% to next
+              </div>
+            )}
+          </div>
+
+          {hasValue ? (
+            <div className="mt-1">
+              <div className="flex items-baseline gap-2">
+                <span className="text-[10px] font-mono text-zinc-400">{item.formatted}</span>
+                <span className="text-[9px] text-zinc-600">• {item.date}</span>
+              </div>
+              {/* Progress Bar */}
+              <div className="h-0.5 w-full bg-zinc-800 rounded-full mt-1 overflow-hidden">
+                <div
+                  className="h-full transition-all duration-1000"
+                  style={{
+                    width: `${item.progress}%`,
+                    backgroundColor: item.level?.color || '#555'
+                  }}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="text-[10px] text-zinc-700 font-mono mt-1">Нет данных</div>
+          )}
         </div>
+
         {hasValue && item.level ? (
           <div
-            className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded"
+            className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded min-w-[60px] text-center"
             style={{
               borderColor: item.level.color,
               color: item.level.color,
@@ -96,9 +124,30 @@ const DisciplineRow = ({ item, isExpanded, onToggle }: { item: any, isExpanded: 
           </div>
         ) : <span className="text-[19px] text-zinc-800">-</span>}
       </div>
-      {isExpanded && d.description && (
-        <div className="px-4 pb-3 pl-12 text-[10px] text-zinc-500 leading-relaxed max-w-sm">
-          {d.description}
+
+      {isExpanded && (
+        <div className="px-4 pb-4 pl-12">
+          {d.description && (
+            <div className="text-[10px] text-zinc-500 leading-relaxed max-w-sm mb-4">
+              {d.description}
+            </div>
+          )}
+
+          {hasValue && d.has1RM && (
+            <div className="bg-zinc-900/40 border border-white/5 rounded p-3">
+              <div className="text-[9px] font-mono text-zinc-500 uppercase mb-2">Рабочие веса (% от ПМ)</div>
+              <div className="grid grid-cols-4 gap-2">
+                {[50, 60, 70, 75, 80, 85, 90, 95].map(pct => (
+                  <div key={pct} className="text-center bg-black/20 p-1.5 rounded border border-white/5">
+                    <div className="text-[9px] text-zinc-500">{pct}%</div>
+                    <div className="text-xs font-bold text-zinc-200">
+                      {Math.round((item.value as number) * pct / 100)} <span className="text-[8px] font-normal text-zinc-600">{d.unit}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
