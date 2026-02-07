@@ -40,6 +40,23 @@ export async function updateCloudProfile(userId: string, updates: Partial<CloudP
     return { error };
 }
 
+export async function deleteCloudProfile(userId: string) {
+    // 1. Delete related data explicitly (in case ON DELETE CASCADE is missing)
+    await supabase.from('measurements').delete().eq('user_id', userId);
+    await supabase.from('results').delete().eq('user_id', userId);
+
+    // 2. Delete the profile
+    const { error } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId);
+
+    if (error) {
+        console.error('Error deleting profile:', error);
+    }
+    return { error };
+}
+
 // === RESULTS ===
 
 export interface CloudResult {

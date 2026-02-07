@@ -8,6 +8,7 @@ import {
     updateCloudProfile,
     addCloudMeasurement,
     getCloudMeasurements,
+    deleteCloudProfile,
     CloudProfile,
     CloudMeasurement
 } from "@/lib/cloudSync";
@@ -102,6 +103,23 @@ function AdminContent() {
         }
     };
 
+    const handleDeleteUser = async (u: CloudProfile) => {
+        if (!window.confirm(`Вы уверены, что хотите удалить пользователя ${u.name || "Без имени"}? Это действие необратимо (удалит профиль и, возможно, данные).`)) {
+            return;
+        }
+
+        try {
+            const { error } = await deleteCloudProfile(u.id);
+            if (error) throw error;
+
+            setUsers(prev => prev.filter(user => user.id !== u.id));
+            alert("Пользователь удален.");
+        } catch (err) {
+            console.error(err);
+            alert("Ошибка при удалении пользователя.");
+        }
+    };
+
     const saveMeasurement = async () => {
         if (!editingUser) return;
         const ts = new Date().toISOString();
@@ -168,6 +186,13 @@ function AdminContent() {
                                 className="btn btn-sm bg-zinc-700 hover:bg-zinc-600"
                             >
                                 ✏️
+                            </button>
+                            <button
+                                onClick={() => handleDeleteUser(u)}
+                                className="btn btn-sm bg-red-600/20 text-red-500 hover:bg-red-600/40"
+                                title="Удалить пользователя"
+                            >
+                                🗑️
                             </button>
                         </div>
                     </div>
