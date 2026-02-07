@@ -172,12 +172,12 @@ export default function UserSwitcher() {
     // Only cloud admins get the badge
     const showAdminBadge = authUser && cloudProfile?.role === 'admin';
 
-    const handleSwitchUser = (userId: string) => {
-        setActiveUserId(userId);
-        saveActiveUserId(userId);
-        setShowDropdown(false);
-        window.location.reload();
-    };
+    // const handleSwitchUser = (userId: string) => {
+    //     setActiveUserId(userId);
+    //     saveActiveUserId(userId);
+    //     setShowDropdown(false);
+    //     window.location.reload();
+    // };
 
     const handleRegister = () => {
         if (!registerName.trim()) return;
@@ -204,16 +204,16 @@ export default function UserSwitcher() {
         window.location.reload();
     };
 
-    const handleLogin = () => {
-        if (!registerEmail.trim()) return;
+    // const handleLogin = () => {
+    //     if (!registerEmail.trim()) return;
 
-        const found = users.find(u => u.email === registerEmail.trim());
-        if (found) {
-            handleSwitchUser(found.id);
-        } else {
-            alert("Пользователь не найден. Зарегистрируйтесь.");
-        }
-    };
+    //     const found = users.find(u => u.email === registerEmail.trim());
+    //     if (found) {
+    //         handleSwitchUser(found.id);
+    //     } else {
+    //         alert("Пользователь не найден. Зарегистрируйтесь.");
+    //     }
+    // };
 
     // SSR placeholder
     if (!mounted) {
@@ -243,11 +243,12 @@ export default function UserSwitcher() {
                     Текущий: <strong className="text-white">{activeUser?.name || "Гость"}</strong>
                     {activeUser?.role === "admin" && " 👑 (Тренер)"}
                 </p>
-                {authUser && (
+                {/* Email removed on request */
+                /* authUser && (
                     <p className="text-xs text-green-400 mt-1">
                         ☁️ Облако: {authUser.email}
                     </p>
-                )}
+                ) */}
             </div>
 
             {/* Cloud Auth Section */}
@@ -297,25 +298,7 @@ export default function UserSwitcher() {
                 </div>
             )}
 
-            {/* User List */}
-            {users.length > 0 && (
-                <div className="max-h-48 overflow-y-auto">
-                    {users.map((u) => (
-                        <button
-                            key={u.id}
-                            type="button"
-                            className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 hover:bg-zinc-800 transition-colors ${u.id === activeUserId ? "bg-blue-900/30 border-l-2 border-blue-500" : ""
-                                }`}
-                            onClick={() => handleSwitchUser(u.id)}
-                        >
-                            {renderAvatar(u.avatar, "lg")}
-                            <span className="flex-1 truncate text-white">{u.name}</span>
-                            {u.role === "admin" && <span className="text-xs">👑</span>}
-                            {u.id === activeUserId && <span className="text-blue-400">✓</span>}
-                        </button>
-                    ))}
-                </div>
-            )}
+            {/* User List REMOVED - Managed via /admin now */}
 
             {/* Divider */}
             <div className="border-t border-zinc-700" />
