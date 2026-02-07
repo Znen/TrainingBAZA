@@ -40,9 +40,11 @@ import {
   getCloudProfile,
   updateCloudProfile,
   addCloudMeasurement,
+  getCloudMeasurements,
   getAllCloudResults,
   type CloudProfile,
-  type CloudResult
+  type CloudResult,
+  type CloudMeasurement
 } from "@/lib/cloudSync";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 
@@ -84,35 +86,16 @@ function AccountContent() {
   const [cloudProfile, setCloudProfile] = useState<CloudProfile | null>(null);
 
   useEffect(() => {
-    const userList = loadUsers();
-    if (userList.length === 0) {
-      // Создаём гостя без админ-прав (админ назначается через облако)
-      const created = createUser("Гость", "user");
-      userList.push(created);
-      saveUsers(userList);
-    }
-    setUsers(userList);
-
-    // Initial Active User
-    const savedActive = loadActiveUserId();
-    let initialActive = savedActive && userList.some((u) => u.id === savedActive) ? savedActive : userList[0]?.id;
-
-    // If auth user exists, prioritize them
-    if (authUser) {
-      initialActive = authUser.id;
-    }
-
-    if (!initialActive) return;
-
-    setActiveUserId(initialActive);
-    // If we are admin, we might be viewing someone else. Default to active.
-    if (!viewingUserId) setViewingUserId(initialActive);
-
     // LOAD DATA (Local + Cloud)
     const loadData = async () => {
-      // 1. Local Data
+      let currentUsers = loadUsers();
       let currentStore: HistoryStore = {};
+
+      // 1. Local Data
       // Ensure initialActive is valid before loading history
+      const savedActive = loadActiveUserId();
+      let initialActive = savedActive && currentUsers.some((u) => u.id === savedActive) ? savedActive : currentUsers[0]?.id;
+
       if (initialActive) {
         currentStore = loadHistoryStore(initialActive);
       }
@@ -120,15 +103,61 @@ function AccountContent() {
       // 2. Cloud Data (if authenticated)
       if (authUser) {
         try {
-          const cloudResults = await getAllCloudResults();
+          // A. Sync Profile
+          const profile = await getCloudProfile(authUser.id);
+          const role = (profile?.role === 'admin') ? 'admin' : 'user';
+          const name = profile?.name || authUser.user_metadata?.name || "Пользователь";
 
-          // Merge into store
+          let currentUser = currentUsers.find(x => x.id === authUser.id);
+          if (currentUser) {
+            // Update if changed
+            if (currentUser.role !== role || (profile?.name && currentUser.name !== profile.name)) {
+              currentUser.role = role;
+              currentUser.name = name;
+              currentUser.measurements = currentUser.measurements || [];
+            }
+          } else {
+            currentUser = {
+              id: authUser.id,
+              name: name,
+              email: authUser.email,
+              role: role,
+              avatarType: "emoji",
+              measurements: []
+            };
+            currentUsers.push(currentUser);
+          }
+
+          initialActive = authUser.id; // Force active to auth user
+
+          // B. Sync Measurements
+          const cloudMeasurements = await getCloudMeasurements(authUser.id);
+          if (currentUser) {
+            const measurementsMap = new Map<string, BodyMeasurement>();
+            // Existing local
+            currentUser.measurements?.forEach(m => measurementsMap.set(m.ts, m));
+
+            // Merge Cloud
+            cloudMeasurements.forEach((cm: CloudMeasurement) => {
+              const existing: BodyMeasurement = measurementsMap.get(cm.recorded_at) || { ts: cm.recorded_at };
+              if (cm.type === 'weight') existing.weight = cm.value;
+              else if (cm.type === 'chest') existing.chest = cm.value;
+              else if (cm.type === 'waist') existing.waist = cm.value;
+              else if (cm.type === 'hips') existing.hips = cm.value;
+              measurementsMap.set(cm.recorded_at, existing);
+            });
+
+            currentUser.measurements = Array.from(measurementsMap.values())
+              .sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+          }
+
+          // C. Sync Results
+          const cloudResults = await getAllCloudResults();
           cloudResults.forEach((r: CloudResult) => {
             if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
             if (!currentStore[r.user_id][r.discipline_slug]) {
               currentStore[r.user_id][r.discipline_slug] = [];
             }
-            // Avoid duplicates by checking if an item with the same timestamp and value already exists
             const exists = currentStore[r.user_id][r.discipline_slug].some(
               (local: HistoryItem) => local.ts === r.recorded_at && local.value === Number(r.value)
             );
@@ -142,16 +171,23 @@ function AccountContent() {
           });
 
         } catch (e) {
-          console.error("Failed to load cloud results", e);
+          console.error("Failed to load cloud data", e);
         }
       }
-      // Set the history for the currently active user
-      setHistory(currentStore[initialActive] ?? {});
+
+      saveUsers(currentUsers);
+      setUsers([...currentUsers]);
+
+      if (initialActive) {
+        setActiveUserId(initialActive);
+        if (!viewingUserId) setViewingUserId(initialActive);
+        setHistory(currentStore[initialActive] ?? {});
+      }
     };
 
     loadData();
 
-  }, [authUser, authLoading]);
+  }, [authUser]); // Run on auth change
 
   // Обновить историю при смене просматриваемого пользователя
   useEffect(() => {
