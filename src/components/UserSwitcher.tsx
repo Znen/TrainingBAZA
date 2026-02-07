@@ -274,13 +274,7 @@ export default function UserSwitcher() {
             )}
             {authUser && (
                 <div className="p-3 border-b border-zinc-700 space-y-2">
-                    <Link
-                        href="/sync"
-                        className="block w-full px-3 py-2 text-xs bg-blue-600/20 hover:bg-blue-600/40 border border-blue-600 rounded-lg text-blue-400 text-center transition-colors"
-                        onClick={() => setShowDropdown(false)}
-                    >
-                        🔄 Синхронизация данных
-                    </Link>
+
                     <button
                         onClick={async () => {
                             await signOut();

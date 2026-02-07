@@ -42,6 +42,7 @@ import {
   addCloudMeasurement,
   getCloudMeasurements,
   getAllCloudResults,
+  getAllCloudProfiles,
   type CloudProfile,
   type CloudResult,
   type CloudMeasurement
@@ -92,7 +93,6 @@ function AccountContent() {
       let currentStore: HistoryStore = {};
 
       // 1. Local Data
-      // Ensure initialActive is valid before loading history
       const savedActive = loadActiveUserId();
       let initialActive = savedActive && currentUsers.some((u) => u.id === savedActive) ? savedActive : currentUsers[0]?.id;
 
@@ -110,7 +110,6 @@ function AccountContent() {
 
           let currentUser = currentUsers.find(x => x.id === authUser.id);
           if (currentUser) {
-            // Update if changed
             if (currentUser.role !== role || (profile?.name && currentUser.name !== profile.name)) {
               currentUser.role = role;
               currentUser.name = name;
@@ -128,16 +127,39 @@ function AccountContent() {
             currentUsers.push(currentUser);
           }
 
-          initialActive = authUser.id; // Force active to auth user
+          initialActive = authUser.id;
 
-          // B. Sync Measurements
+          // B. If Admin -> Fetch ALL profiles
+          if (role === 'admin') {
+            try {
+              const allProfiles = await getAllCloudProfiles();
+              allProfiles.forEach((p: CloudProfile) => {
+                const existing = currentUsers.find(u => u.id === p.id);
+                if (!existing) {
+                  currentUsers.push({
+                    id: p.id,
+                    name: p.name,
+                    email: "", // Cloud profiles might not expose email publicly, generic filler
+                    role: p.role as any,
+                    avatarType: (p.avatar_type as any) || "emoji",
+                    measurements: []
+                  });
+                } else {
+                  // Sync details
+                  existing.name = p.name;
+                  existing.role = p.role as any;
+                }
+              });
+            } catch (err) {
+              console.error("Failed to load all profiles in Account:", err);
+            }
+          }
+
+          // C. Sync Local User Measurements (Authenticated User)
           const cloudMeasurements = await getCloudMeasurements(authUser.id);
           if (currentUser) {
             const measurementsMap = new Map<string, BodyMeasurement>();
-            // Existing local
             currentUser.measurements?.forEach(m => measurementsMap.set(m.ts, m));
-
-            // Merge Cloud
             cloudMeasurements.forEach((cm: CloudMeasurement) => {
               const existing: BodyMeasurement = measurementsMap.get(cm.recorded_at) || { ts: cm.recorded_at };
               if (cm.type === 'weight') existing.weight = cm.value;
@@ -146,12 +168,11 @@ function AccountContent() {
               else if (cm.type === 'hips') existing.hips = cm.value;
               measurementsMap.set(cm.recorded_at, existing);
             });
-
             currentUser.measurements = Array.from(measurementsMap.values())
               .sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
           }
 
-          // C. Sync Results
+          // D. Sync Results
           const cloudResults = await getAllCloudResults();
           cloudResults.forEach((r: CloudResult) => {
             if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
@@ -187,7 +208,49 @@ function AccountContent() {
 
     loadData();
 
-  }, [authUser]); // Run on auth change
+  }, [authUser]);
+
+  // New Effect: Fetch Measurements for Viewing User (if Admin)
+  useEffect(() => {
+    const fetchViewingUserMeasurements = async () => {
+      if (!authUser || !viewingUserId) return;
+      if (viewingUserId === authUser.id) return; // Already handled in main loadData
+
+      // Check if current user is admin
+      const currentUser = users.find(u => u.id === authUser.id);
+      if (!currentUser || currentUser.role !== 'admin') return;
+
+      try {
+        const cloudMeasurements = await getCloudMeasurements(viewingUserId);
+        // Merge into users state
+        setUsers(prevUsers => {
+          const newUsers = [...prevUsers];
+          const targetUser = newUsers.find(u => u.id === viewingUserId);
+          if (targetUser) {
+            const measurementsMap = new Map<string, BodyMeasurement>();
+            targetUser.measurements?.forEach(m => measurementsMap.set(m.ts, m));
+
+            cloudMeasurements.forEach((cm: CloudMeasurement) => {
+              const existing: BodyMeasurement = measurementsMap.get(cm.recorded_at) || { ts: cm.recorded_at };
+              if (cm.type === 'weight') existing.weight = cm.value;
+              else if (cm.type === 'chest') existing.chest = cm.value;
+              else if (cm.type === 'waist') existing.waist = cm.value;
+              else if (cm.type === 'hips') existing.hips = cm.value;
+              measurementsMap.set(cm.recorded_at, existing);
+            });
+
+            targetUser.measurements = Array.from(measurementsMap.values())
+              .sort((a, b) => new Date(a.ts).getTime() - new Date(b.ts).getTime());
+          }
+          return newUsers;
+        });
+      } catch (e) {
+        console.error("Failed to fetch measurements for viewing user:", e);
+      }
+    };
+
+    fetchViewingUserMeasurements();
+  }, [viewingUserId, authUser]);
 
   // Обновить историю при смене просматриваемого пользователя
   useEffect(() => {

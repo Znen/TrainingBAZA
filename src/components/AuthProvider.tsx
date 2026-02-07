@@ -29,6 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
+            if (session?.user) triggerAutoSync(session.user);
         });
 
         // Listen for auth changes
@@ -37,11 +38,61 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 setSession(session);
                 setUser(session?.user ?? null);
                 setLoading(false);
+                if (session?.user) triggerAutoSync(session.user);
             }
         );
 
         return () => subscription.unsubscribe();
     }, []);
+
+    // Helper: Auto-sync local data to cloud on login
+    const triggerAutoSync = async (user: User) => {
+        try {
+            // 1. Try new format first
+            let historyJson = localStorage.getItem("trainingBaza:history:v2");
+            let localHistory: any = null;
+
+            if (historyJson) {
+                const store = JSON.parse(historyJson);
+                // HistoryStore is Record<userId, Record<slug, HistoryItem[]>>
+                // We sync data for "guest" or any user that was used locally
+                localHistory = {};
+                Object.values(store).forEach((userHistory: any) => {
+                    Object.entries(userHistory).forEach(([slug, items]: [string, any]) => {
+                        localHistory[slug] = [...(localHistory[slug] || []), ...items];
+                    });
+                });
+            } else {
+                // 2. Fallback to old key
+                historyJson = localStorage.getItem("historyStore");
+                if (historyJson) {
+                    localHistory = JSON.parse(historyJson);
+                }
+            }
+
+            if (!localHistory || Object.keys(localHistory).length === 0) return;
+
+            console.log("🔄 Auto-syncing local data to cloud...");
+            let count = 0;
+            const { addCloudResult } = await import("@/lib/cloudSync"); // Dynamic import to avoid circular dep if any
+
+            for (const [slug, results] of Object.entries(localHistory)) {
+                if (!Array.isArray(results)) continue;
+                for (const result of (results as any[])) {
+                    await addCloudResult({
+                        user_id: user.id,
+                        discipline_slug: slug,
+                        value: result.value,
+                        recorded_at: result.ts || result.date || new Date().toISOString(),
+                    });
+                    count++;
+                }
+            }
+            if (count > 0) console.log(`✅ Auto-synced ${count} results.`);
+        } catch (err) {
+            console.error("Auto-sync failed:", err);
+        }
+    };
 
     const handleSignOut = async () => {
         await supabase.auth.signOut();
