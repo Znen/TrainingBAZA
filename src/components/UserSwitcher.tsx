@@ -275,6 +275,16 @@ export default function UserSwitcher() {
             {authUser && (
                 <div className="p-3 border-b border-zinc-700 space-y-2">
 
+                    {showAdminBadge && (
+                        <Link
+                            href="/admin"
+                            className="block w-full px-3 py-2 text-xs bg-yellow-600/20 hover:bg-yellow-600/40 border border-yellow-600 rounded-lg text-yellow-500 text-center transition-colors mb-2"
+                            onClick={() => setShowDropdown(false)}
+                        >
+                            👑 Панель Админа
+                        </Link>
+                    )}
+
                     <button
                         onClick={async () => {
                             await signOut();
