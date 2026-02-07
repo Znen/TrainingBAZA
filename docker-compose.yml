@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  training-baza:
+    build: .
+    container_name: training-baza
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    # Если нужно прокинуть локальные файлы (например, конфиги)
+    # volumes:
+    #   - ./next.config.mjs:/app/next.config.mjs
