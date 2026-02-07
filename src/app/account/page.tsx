@@ -73,21 +73,26 @@ const StatCard = ({ stat, isSelected, onClick }: { stat: any, isSelected: boolea
 
 const DisciplineRow = ({ item, isExpanded, onToggle }: { item: any, isExpanded: boolean, onToggle: () => void }) => {
   const d = item.discipline;
-  const val = item.value;
+  const hasValue = item.value !== null;
+
   return (
     <div className="group">
       <div onClick={onToggle} className="px-4 py-3 flex items-center gap-3 cursor-pointer hover:bg-white/5 transition-colors">
         <span className="text-lg grayscale group-hover:grayscale-0 transition-all">{d.icon}</span>
         <div className="flex-1 min-w-0">
           <div className="text-sm font-bold text-zinc-200 truncate">{d.name}</div>
-          {val && <div className="text-[10px] font-mono text-zinc-500">{val.formatted} • {val.date}</div>}
+          {hasValue && <div className="text-[10px] font-mono text-zinc-500">{item.formatted} • {item.date}</div>}
         </div>
-        {val ? (
-          <div className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded ${val.level >= 10 ? "border-yellow-500 text-yellow-500 box-shadow-glow" :
-            val.level >= 5 ? "border-purple-500 text-purple-500" :
-              "border-zinc-700 text-zinc-600"
-            }`}>
-            {val.levelTitle}
+        {hasValue && item.level ? (
+          <div
+            className="px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded"
+            style={{
+              borderColor: item.level.color,
+              color: item.level.color,
+              boxShadow: `0 0 10px -5px ${item.level.color}`
+            }}
+          >
+            {item.level.name}
           </div>
         ) : <span className="text-[19px] text-zinc-800">-</span>}
       </div>

@@ -277,16 +277,43 @@ export function getDisciplineAchievements(
 ): Array<{
     discipline: Discipline;
     value: number | null;
+    formatted: string;
+    date: string | null;
     level: StandardLevel | null;
     nextLevel: StandardLevel | null;
     progress: number;
 }> {
     return disciplines.map(d => {
-        const value = getLatestValue(history[d.slug]);
-        if (value === null) {
-            return { discipline: d, value: null, level: null, nextLevel: STANDARD_LEVELS[0], progress: 0 };
+        // Find latest item
+        const items = history[d.slug];
+        let latestItem = null;
+        if (items && items.length > 0) {
+            latestItem = [...items].sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())[0];
         }
+
+        if (!latestItem) {
+            return {
+                discipline: d,
+                value: null,
+                formatted: "-",
+                date: null,
+                level: null,
+                nextLevel: STANDARD_LEVELS[0],
+                progress: 0
+            };
+        }
+
+        const value = latestItem.value;
         const { level, nextLevel, progress } = getStandardLevel(d.slug, value);
-        return { discipline: d, value, level, nextLevel, progress };
+
+        return {
+            discipline: d,
+            value,
+            formatted: `${value} ${d.unit}`,
+            date: new Date(latestItem.ts).toLocaleDateString("ru-RU"),
+            level,
+            nextLevel,
+            progress
+        };
     });
 }
