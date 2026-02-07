@@ -84,8 +84,8 @@ const DisciplineRow = ({ item, isExpanded, onToggle }: { item: any, isExpanded: 
         </div>
         {val ? (
           <div className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-widest border rounded ${val.level >= 10 ? "border-yellow-500 text-yellow-500 box-shadow-glow" :
-              val.level >= 5 ? "border-purple-500 text-purple-500" :
-                "border-zinc-700 text-zinc-600"
+            val.level >= 5 ? "border-purple-500 text-purple-500" :
+              "border-zinc-700 text-zinc-600"
             }`}>
             {val.levelTitle}
           </div>
@@ -151,9 +151,9 @@ function AccountContent() {
       const savedActive = loadActiveUserId();
       let initialActive = savedActive && currentUsers.some((u) => u.id === savedActive) ? savedActive : currentUsers[0]?.id;
 
-      if (initialActive) {
-        currentStore = loadHistoryStore(initialActive);
-      }
+      // Always load history store (use authUser.id or placeholder as fallback for migration)
+      const storeId = initialActive || authUser?.id || "guest";
+      currentStore = loadHistoryStore(storeId);
 
       // Sync with Cloud if Auth
       if (authUser) {
