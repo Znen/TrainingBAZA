@@ -741,13 +741,14 @@ function AccountContent() {
                 {u.id !== activeUserId ? (
                   <button
                     onClick={() => {
-                      if (confirm(`Удалить пользователя "${u.name}"?`)) {
+                      if (window.confirm(`Удалить пользователя "${u.name}"?`)) {
                         const updated = deleteUser(users, u.id);
                         setUsers(updated);
                         saveUsers(updated);
                       }
                     }}
-                    className="text-[8px] font-black uppercase text-red-500 hover:text-red-400"
+                    className="p-3 -mr-3 text-[8px] font-black uppercase text-red-500 hover:text-red-400 touch-manipulation"
+                    aria-label="Удалить пользователя"
                   >
                     [ УДАЛИТЬ ]
                   </button>
@@ -760,12 +761,12 @@ function AccountContent() {
 
           <button
             onClick={() => {
-              if (confirm("Удалить ВСЕХ пользователей? Это действие необратимо!")) {
+              if (window.confirm("Удалить ВСЕХ пользователей? Это действие необратимо!")) {
                 clearAllUsers();
                 window.location.reload();
               }
             }}
-            className="w-full mt-4 py-2 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-colors"
+            className="w-full mt-4 py-4 border border-red-500/30 text-red-500 text-[9px] font-black uppercase tracking-widest hover:bg-red-500/10 transition-colors touch-manipulation"
           >
             Удалить все данные БД
           </button>
