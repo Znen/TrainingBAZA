@@ -172,13 +172,17 @@ function ResultsContent() {
     setActiveUserId(initialActive);
     setTargetUserId(initialActive);
     saveActiveUserId(initialActive);
+  }, [authUser, authLoading]);
 
-    const loadData = async () => {
-      // 1. Local Data
-      let currentStore: HistoryStore = {};
-      if (initialActive) {
-        currentStore = loadHistoryStore(initialActive);
-      }
+  // Load Data Effect (Local + Cloud)
+  useEffect(() => {
+    const loadToStore = async () => {
+      // 1. Initial Load from LocalStorage (for active user, or ideally all known history if structure allowed, 
+      // but loadHistoryStore currently loads everything from the single key if it's migrated, 
+      // actually loadHistoryStore loads ALL history from LS key 'trainingBaza:history:v2')
+      // Wait, loadHistoryStore argument 'defaultUserId' is only used for migration. 
+      // It returns the WHOLE store.
+      const currentStore = loadHistoryStore(activeUserId || "guest");
 
       // 2. Cloud Data (if authenticated)
       if (authUser) {
@@ -205,49 +209,29 @@ function ResultsContent() {
       }
 
       setStore(currentStore);
-
-      // Initialize values
-      const h = currentStore[initialActive] ?? {};
-      const initialValues: Record<string, string> = {};
-      for (const d of list) {
-        const last = getLatest(h[d.slug]);
-        if (last) {
-          if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
-            initialValues[d.slug] = formatSecondsToTime(last.value);
-          } else {
-            initialValues[d.slug] = String(last.value);
-          }
-        }
-      }
-      setValues(initialValues);
     };
 
-    loadData();
+    loadToStore();
+  }, [authUser]); // Reload if auth changes
 
-  }, [list, authUser, authLoading]);
-
-  // Обновить store и значения при смене целевого пользователя
+  // Update form values when Store OR TargetUser changes
   useEffect(() => {
-    if (targetUserId && users.length > 0) {
-      // Перезагружаем store чтобы получить актуальные данные
-      const freshStore = loadHistoryStore(activeUserId);
-      setStore(freshStore);
+    if (!targetUserId) return;
 
-      const h = freshStore[targetUserId] ?? {};
-      const nextValues: Record<string, string> = {};
-      for (const d of list) {
-        const last = getLatest(h[d.slug]);
-        if (last) {
-          if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
-            nextValues[d.slug] = formatSecondsToTime(last.value);
-          } else {
-            nextValues[d.slug] = String(last.value);
-          }
+    const h = store[targetUserId] ?? {};
+    const nextValues: Record<string, string> = {};
+    for (const d of list) {
+      const last = getLatest(h[d.slug]);
+      if (last) {
+        if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
+          nextValues[d.slug] = formatSecondsToTime(last.value);
+        } else {
+          nextValues[d.slug] = String(last.value);
         }
       }
-      setValues(nextValues);
     }
-  }, [targetUserId, users, list, activeUserId]);
+    setValues(nextValues);
+  }, [targetUserId, store, list]);
 
   const commitValue = (slug: string, rawValue: string) => {
     if (!canAddResults) return;
