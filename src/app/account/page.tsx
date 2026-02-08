@@ -33,6 +33,7 @@ import {
   addCloudMeasurement,
   getCloudMeasurements,
   getAllCloudResults,
+  getCloudResults,
   type CloudProfile,
   type CloudResult,
   type CloudMeasurement
@@ -263,23 +264,30 @@ function AccountContent() {
           }
 
           // Sync Results
-          const cloudResults = await getAllCloudResults();
+          const cloudResults = await getCloudResults(authUser.id); // Explicitly fetch for this user
           if (cloudResults && cloudResults.length > 0) {
             cloudResults.forEach((r: CloudResult) => {
-              if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
-              if (!currentStore[r.user_id][r.discipline_slug]) {
-                currentStore[r.user_id][r.discipline_slug] = [];
+              // Ensure we use the correct user_id bucket (should match authUser.id)
+              const targetId = r.user_id || authUser.id;
+
+              if (!currentStore[targetId]) currentStore[targetId] = {};
+              if (!currentStore[targetId][r.discipline_slug]) {
+                currentStore[targetId][r.discipline_slug] = [];
               }
-              const exists = currentStore[r.user_id][r.discipline_slug].some(
+
+              const exists = currentStore[targetId][r.discipline_slug].some(
                 (local: HistoryItem) => local.ts === r.recorded_at && local.value === Number(r.value)
               );
+
               if (!exists) {
-                currentStore[r.user_id][r.discipline_slug].push({
+                currentStore[targetId][r.discipline_slug].push({
                   ts: r.recorded_at,
                   value: Number(r.value),
                 });
               }
             });
+          } else {
+            console.log("No cloud results found for user:", authUser.id);
           }
 
         } catch (e) {
