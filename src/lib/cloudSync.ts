@@ -188,3 +188,71 @@ export async function getAllCloudProfiles(): Promise<CloudProfile[]> {
     }
     return data || [];
 }
+// === PROGRESS PHOTOS ===
+
+export interface ProgressPhoto {
+    id: string;
+    user_id: string;
+    storage_path: string;
+    full_url?: string;
+    recorded_at: string;
+}
+
+export async function uploadProgressPhoto(userId: string, file: File): Promise<{ data: ProgressPhoto | null; error: any }> {
+    try {
+        // 1. Upload to Storage
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('progress-photos')
+            .upload(fileName, file);
+
+        if (uploadError) throw uploadError;
+
+        // 2. Add to Database
+        const { data, error: dbError } = await supabase
+            .from('progress_photos')
+            .insert({
+                user_id: userId,
+                storage_path: fileName,
+                recorded_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (dbError) throw dbError;
+
+        return { data, error: null };
+    } catch (error) {
+        console.error('Error uploading photo:', error);
+        return { data: null, error };
+    }
+}
+
+export async function getProgressPhotos(userId: string): Promise<ProgressPhoto[]> {
+    const { data, error } = await supabase
+        .from('progress_photos')
+        .select('*')
+        .eq('user_id', userId)
+        .order('recorded_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching photos:', error);
+        return [];
+    }
+
+    if (!data) return [];
+
+    // Generate URLs
+    return data.map(photo => {
+        const { data: urlData } = supabase.storage
+            .from('progress-photos')
+            .getPublicUrl(photo.storage_path);
+
+        return {
+            ...photo,
+            full_url: urlData.publicUrl
+        };
+    });
+}

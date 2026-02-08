@@ -39,6 +39,7 @@ import {
   type CloudMeasurement
 } from "@/lib/cloudSync";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { PhotoGallery } from "@/components/PhotoGallery";
 
 // UI Components
 const MeasurementCard = ({ label, value, unit, icon }: { label: string, value?: number, unit: string, icon: string }) => (
@@ -254,9 +255,13 @@ function AccountContent() {
             cloudMeasurements.forEach((cm: CloudMeasurement) => {
               const existing: BodyMeasurement = measurementsMap.get(cm.recorded_at) || { ts: cm.recorded_at };
               if (cm.type === 'weight') existing.weight = cm.value;
+              if (cm.type === 'height') existing.height = cm.value;
               if (cm.type === 'chest') existing.chest = cm.value;
               if (cm.type === 'waist') existing.waist = cm.value;
               if (cm.type === 'hips') existing.hips = cm.value;
+              if (cm.type === 'biceps') existing.biceps = cm.value;
+              if (cm.type === 'shoulders') existing.shoulders = cm.value;
+              if (cm.type === 'glutes') existing.glutes = cm.value;
               measurementsMap.set(cm.recorded_at, existing);
             });
             currentUser.measurements = Array.from(measurementsMap.values())
@@ -525,51 +530,8 @@ function AccountContent() {
         </div>
       </div>
 
-      {/* Measurements */}
-      <section className="bg-zinc-900/10 border border-white/5 overflow-hidden mb-8">
-        <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center bg-white/5">
-          <h3 className="text-[10px] font-black uppercase italic tracking-[0.2em] text-zinc-400">Метрики тела</h3>
-          <button className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 hover:text-white transition-colors" onClick={() => setShowMeasurementForm(!showMeasurementForm)}>{showMeasurementForm ? "[ СКРЫТЬ ]" : "[ ВНЕСТИ ]"}</button>
-        </div>
-        {showMeasurementForm && (
-          <div className="p-4 border-b border-white/5 bg-black/40 backdrop-blur-sm">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Вес (кг)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newWeight} onChange={e => setNewWeight(e.target.value)} placeholder="75.5" /></div>
-              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Грудь (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newChest} onChange={e => setNewChest(e.target.value)} placeholder="100" /></div>
-              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Талия (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newWaist} onChange={e => setNewWaist(e.target.value)} placeholder="80" /></div>
-              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Бёдра (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newHips} onChange={e => setNewHips(e.target.value)} placeholder="95" /></div>
-            </div>
-            <button className="w-full mt-4 bg-[var(--accent-primary)] py-2 text-[10px] font-black uppercase italic tracking-widest text-black hover:bg-yellow-400 transition-colors" onClick={handleAddMeasurement}>СОХРАНИТЬ ДАННЫЕ</button>
-          </div>
-        )}
-        <div className="p-4">
-          {latestMeasurements ? (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <MeasurementCard label="Вес" value={latestMeasurements.weight} unit="кг" icon="⚖️" />
-                <MeasurementCard label="Грудь" value={latestMeasurements.chest} unit="см" icon="📐" />
-                <MeasurementCard label="Талия" value={latestMeasurements.waist} unit="см" icon="📏" />
-                <MeasurementCard label="Бёдра" value={latestMeasurements.hips} unit="см" icon="📐" />
-              </div>
-              {measurementHistory.length > 1 && (
-                <details className="text-sm">
-                  <summary className="cursor-pointer text-zinc-600 hover:text-white transition-colors uppercase text-[9px] font-black tracking-widest">История измерений ({measurementHistory.length})</summary>
-                  <div className="mt-2 space-y-2">{measurementHistory.map(m => <div key={m.ts} className="flex justify-between items-center text-[10px] font-mono py-2 border-b border-white/5 last:border-0"><span className="text-zinc-600">{new Date(m.ts).toLocaleDateString("ru-RU")}</span><div className="flex gap-4 text-zinc-400">{m.weight && <span>⚖️ {m.weight}kg</span>}{m.chest && <span>📐 {m.chest}cm</span>}{m.waist && <span>📏 {m.waist}cm</span>}{m.hips && <span>📐 {m.hips}cm</span>}</div></div>)}</div>
-                </details>
-              )}
-            </>
-          ) : <p className="text-zinc-600 text-[10px] font-mono uppercase text-center py-4">НЕТ ДАННЫХ. НАЧНИТЕ ОТСЛЕЖИВАНИЕ</p>}
-        </div>
-      </section>
-
-      {/* Stats Grid */}
-      <h3 className="text-[10px] font-black uppercase italic tracking-[0.2em] text-zinc-600 mb-4 px-1">Основные параметры</h3>
-      <div className="grid gap-3 grid-cols-2 mb-8">
-        {stats.map(stat => <StatCard key={stat.stat} stat={stat} isSelected={selectedStat === stat.stat} onClick={() => setSelectedStat(selectedStat === stat.stat ? null : stat.stat)} />)}
-      </div>
-
-      {/* Discipline List */}
-      <div className="space-y-6">
+      {/* Discipline List (Moved Up) */}
+      <div className="space-y-6 mb-8">
         {Object.entries(groupedAchievements).map(([category, items]) => {
           const visibleItems = showAllDisciplines ? items : items.filter(i => i.value !== null);
           if (visibleItems.length === 0) return null;
@@ -595,6 +557,110 @@ function AccountContent() {
           );
         })}
       </div>
+
+      {/* Measurements (Moved Down & Expanded) */}
+      <section className="bg-zinc-900/10 border border-white/5 overflow-hidden mb-8">
+        <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center bg-white/5">
+          <div className="flex items-center gap-2">
+            <h3 className="text-[10px] font-black uppercase italic tracking-[0.2em] text-zinc-400">Метрики тела</h3>
+            <button
+              onClick={() => setShowInstructions(true)}
+              className="w-4 h-4 rounded-full border border-zinc-600 flex items-center justify-center text-[9px] text-zinc-500 hover:text-white hover:border-white transition-colors"
+              title="Как замерять?"
+            >
+              i
+            </button>
+          </div>
+          <button className="text-[9px] font-bold uppercase tracking-widest text-zinc-600 hover:text-white transition-colors" onClick={() => setShowMeasurementForm(!showMeasurementForm)}>{showMeasurementForm ? "[ СКРЫТЬ ]" : "[ ВНЕСТИ ]"}</button>
+        </div>
+
+        {showMeasurementForm && (
+          <div className="p-4 border-b border-white/5 bg-black/40 backdrop-blur-sm">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Вес (кг)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newWeight} onChange={e => setNewWeight(e.target.value)} placeholder="75.5" /></div>
+              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Рост (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newHeight} onChange={e => setNewHeight(e.target.value)} placeholder="180" /></div>
+              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Грудь (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newChest} onChange={e => setNewChest(e.target.value)} placeholder="100" /></div>
+              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Талия (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newWaist} onChange={e => setNewWaist(e.target.value)} placeholder="80" /></div>
+              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Бёдра (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newHips} onChange={e => setNewHips(e.target.value)} placeholder="95" /></div>
+              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Бицепс (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newBiceps} onChange={e => setNewBiceps(e.target.value)} placeholder="35" /></div>
+              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Плечи (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newShoulders} onChange={e => setNewShoulders(e.target.value)} placeholder="120" /></div>
+              <div><label className="text-[9px] font-mono text-zinc-600 uppercase block mb-1">Ягодицы (см)</label><input type="number" className="w-full bg-black/60 border border-white/10 rounded-none px-3 py-2 text-sm font-mono text-white focus:border-[var(--accent-primary)] outline-none" value={newGlutes} onChange={e => setNewGlutes(e.target.value)} placeholder="95" /></div>
+            </div>
+            <button className="w-full mt-4 bg-[var(--accent-primary)] py-2 text-[10px] font-black uppercase italic tracking-widest text-black hover:bg-yellow-400 transition-colors" onClick={handleAddMeasurement}>СОХРАНИТЬ ДАННЫЕ</button>
+          </div>
+        )}
+        <div className="p-4">
+          {latestMeasurements ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <MeasurementCard label="Вес" value={latestMeasurements.weight} unit="кг" icon="⚖️" />
+                <MeasurementCard label="Рост" value={latestMeasurements.height} unit="см" icon="📏" />
+                <MeasurementCard label="Грудь" value={latestMeasurements.chest} unit="см" icon="📐" />
+                <MeasurementCard label="Талия" value={latestMeasurements.waist} unit="см" icon="📏" />
+                <MeasurementCard label="Бёдра" value={latestMeasurements.hips} unit="см" icon="📐" />
+                <MeasurementCard label="Бицепс" value={latestMeasurements.biceps} unit="см" icon="💪" />
+                <MeasurementCard label="Плечи" value={latestMeasurements.shoulders} unit="см" icon="👕" />
+                <MeasurementCard label="Ягодицы" value={latestMeasurements.glutes} unit="см" icon="🍑" />
+              </div>
+              {measurementHistory.length > 1 && (
+                <details className="text-sm">
+                  <summary className="cursor-pointer text-zinc-600 hover:text-white transition-colors uppercase text-[9px] font-black tracking-widest">История измерений ({measurementHistory.length})</summary>
+                  <div className="mt-2 space-y-2">
+                    {measurementHistory.map(m => (
+                      <div key={m.ts} className="flex flex-wrap justify-between items-center text-[10px] font-mono py-2 border-b border-white/5 last:border-0">
+                        <span className="text-zinc-600 shrink-0 mr-4">{new Date(m.ts).toLocaleDateString("ru-RU")}</span>
+                        <div className="flex flex-wrap gap-x-4 gap-y-1 text-zinc-400 justify-end">
+                          {m.weight && <span>⚖️ {m.weight}</span>}
+                          {m.height && <span>📏 {m.height}</span>}
+                          {m.chest && <span>📐 {m.chest}</span>}
+                          {m.waist && <span>📏 {m.waist}</span>}
+                          {m.hips && <span>📐 {m.hips}</span>}
+                          {m.biceps && <span>💪 {m.biceps}</span>}
+                          {m.shoulders && <span>👕 {m.shoulders}</span>}
+                          {m.glutes && <span>🍑 {m.glutes}</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </>
+          ) : <p className="text-zinc-600 text-[10px] font-mono uppercase text-center py-4">НЕТ ДАННЫХ. НАЧНИТЕ ОТСЛЕЖИВАНИЕ</p>}
+        </div>
+      </section>
+
+      {/* Progress Photos */}
+      {authUser && activeUserId === authUser.id && (
+        <PhotoGallery userId={authUser.id} />
+      )}
+
+      {/* Stats Grid (Moved Down) */}
+      <h3 className="text-[10px] font-black uppercase italic tracking-[0.2em] text-zinc-600 mb-4 px-1">Основные параметры</h3>
+      <div className="grid gap-3 grid-cols-2 mb-8">
+        {stats.map(stat => <StatCard key={stat.stat} stat={stat} isSelected={selectedStat === stat.stat} onClick={() => setSelectedStat(selectedStat === stat.stat ? null : stat.stat)} />)}
+      </div>
+
+      {/* Instructions Modal */}
+      {showInstructions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowInstructions(false)}>
+          <div className="bg-zinc-900 border border-white/10 p-6 max-w-md w-full relative" onClick={e => e.stopPropagation()}>
+            <button className="absolute top-2 right-2 text-zinc-500 hover:text-white" onClick={() => setShowInstructions(false)}>✕</button>
+            <h3 className="text-xl font-black italic uppercase mb-4 text-white">Как делать замеры</h3>
+            <div className="aspect-[3/4] bg-zinc-800 flex items-center justify-center text-zinc-600 mb-4 border border-white/5">
+              {/* Placeholder for schematic image */}
+              <div className="text-center">
+                <span className="text-4xl block mb-2">🧍</span>
+                <p className="text-xs font-mono uppercase">Схема замеров</p>
+                <p className="text-[10px] mt-1">(Изображение загружается...)</p>
+              </div>
+            </div>
+            <p className="text-xs text-zinc-400 leading-relaxed">
+              Для точности результатов проводите замеры утром натощак, в расслабленном состоянии. Используйте сантиметровую ленту.
+            </p>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

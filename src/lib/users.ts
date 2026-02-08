@@ -13,9 +13,13 @@ export type UserRole = "user" | "admin";
  */
 export type BodyMeasurement = {
     weight?: number;       // кг
+    height?: number;       // рост, см
     chest?: number;        // обхват груди, см
     waist?: number;        // обхват талии, см
     hips?: number;         // обхват бёдер, см
+    biceps?: number;       // бицепс, см
+    shoulders?: number;    // плечи, см
+    glutes?: number;       // ягодицы, см
     ts: string;            // ISO timestamp
 };
 
