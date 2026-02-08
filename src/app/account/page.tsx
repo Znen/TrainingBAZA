@@ -178,6 +178,8 @@ function AccountContent() {
   const [users, setUsers] = useState<User[]>([]);
   const [activeUserId, setActiveUserId] = useState<string>("");
   const [history, setHistory] = useState<HistoryBySlug>({});
+  const [syncLogs, setSyncLogs] = useState<string[]>([]);
+  const addLog = (m: string) => setSyncLogs(p => [...p.slice(-5), `${new Date().toLocaleTimeString()}: ${m}`]);
 
   // UI State
   const [showAllDisciplines, setShowAllDisciplines] = useState(false);
@@ -212,8 +214,10 @@ function AccountContent() {
       const savedActive = loadActiveUserId();
       let initialActive = savedActive && currentUsers.some((u) => u.id === savedActive) ? savedActive : currentUsers[0]?.id;
 
+      addLog("Starting loadData...");
       // Ensure Auth User Exists in Local State immediately
       if (authUser) {
+        addLog(`Auth detected: ${authUser.email}`);
         initialActive = authUser.id;
         let currentUser = currentUsers.find(x => x.id === authUser.id);
         const defaultName = authUser.user_metadata?.name || authUser.email?.split('@')[0] || "Атлет";
@@ -240,8 +244,11 @@ function AccountContent() {
 
       // Sync with Cloud if Auth
       if (authUser) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        addLog(`Connecting to: ${supabaseUrl?.slice(0, 20)}...`);
         try {
           const profile = await getCloudProfile(authUser.id);
+          addLog("Profile fetch: OK");
 
           // Update local user with Cloud Profile data
           const currentUser = currentUsers.find(x => x.id === authUser.id);
@@ -254,6 +261,7 @@ function AccountContent() {
 
           // Sync Measurements
           const cloudMeasurements = await getCloudMeasurements(authUser.id);
+          addLog(`Stats synced: ${cloudMeasurements.length} measurements`);
           if (currentUser) {
             const measurementsMap = new Map<string, BodyMeasurement>();
             currentUser.measurements?.forEach(m => measurementsMap.set(m.ts, m));
@@ -275,6 +283,7 @@ function AccountContent() {
 
           // Sync Results
           const cloudResults = await getCloudResults(authUser.id); // Explicitly fetch for this user
+          addLog(`History synced: ${cloudResults?.length || 0} entries`);
           if (cloudResults && cloudResults.length > 0) {
             cloudResults.forEach((r: CloudResult) => {
               // Ensure we use the correct user_id bucket (should match authUser.id)
@@ -300,7 +309,9 @@ function AccountContent() {
             console.log("No cloud results found for user:", authUser.id);
           }
 
-        } catch (e) {
+          addLog("All data synced successfully.");
+        } catch (e: any) {
+          addLog(`Sync error: ${e.message || 'Unknown'}`);
           console.error("Cloud sync failed:", e);
         }
       }
@@ -648,7 +659,20 @@ function AccountContent() {
         <PhotoGallery userId={authUser.id} />
       )}
 
-      {/* Stats Grid (Moved Down) */}
+      {/* Debug Info (Only visible if logs present) */}
+      {syncLogs.length > 0 && (
+        <div className="mt-8 p-4 bg-zinc-900/50 border border-white/5 rounded text-[10px] font-mono text-zinc-500">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-zinc-400 font-bold uppercase">System Debug</span>
+            <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="text-red-500 underline">Clear & Reset</button>
+          </div>
+          {syncLogs.map((l, i) => <div key={i}>{l}</div>)}
+          {authUser && <div className="mt-2 text-zinc-600">ID: {authUser.id.slice(0, 8)}...</div>}
+          <div className="mt-1 text-[8px] text-zinc-700 break-all">URL: {process.env.NEXT_PUBLIC_SUPABASE_URL}</div>
+        </div>
+      )}
+
+      {/* Stats Grid */}
       <h3 className="text-[10px] font-black uppercase italic tracking-[0.2em] text-zinc-600 mb-4 px-1">Основные параметры</h3>
       <div className="grid gap-3 grid-cols-2 mb-8">
         {stats.map(stat => <StatCard key={stat.stat} stat={stat} isSelected={selectedStat === stat.stat} onClick={() => setSelectedStat(selectedStat === stat.stat ? null : stat.stat)} />)}
