@@ -308,7 +308,12 @@ function AccountContent() {
   const activeUser = users.find((u) => u.id === activeUserId);
 
   // Display Logic (Mix of Cloud + Local)
-  const displayName = cloudProfile?.name || activeUser?.name || "Гость";
+  const displayName = cloudProfile?.name ||
+    activeUser?.name ||
+    authUser?.user_metadata?.name ||
+    authUser?.email?.split('@')[0] ||
+    "Атлет";
+
   // const displayAvatar = cloudProfile?.avatar || activeUser?.avatar;
   const displayRole = cloudProfile?.role || activeUser?.role || "user";
   const isCloudAdmin = cloudProfile?.role === "admin";
@@ -319,6 +324,13 @@ function AccountContent() {
   const overallLevel = useMemo(() => getOverallLevel(stats), [stats]);
   const rank = useMemo(() => getRankTitle(overallLevel), [overallLevel]);
   const achievements = useMemo(() => getDisciplineAchievements(list, history), [list, history]);
+
+  // Force sync activeUserId with Auth User
+  useEffect(() => {
+    if (authUser && activeUserId !== authUser.id) {
+      setActiveUserId(authUser.id);
+    }
+  }, [authUser, activeUserId]);
 
   const latestMeasurements = activeUser ? getLatestMeasurements(activeUser) : null;
   const measurementHistory = activeUser ? getMeasurementHistory(activeUser, 5) : [];
