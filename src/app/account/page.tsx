@@ -402,11 +402,15 @@ function AccountContent() {
   const isCloudAdmin = cloudProfile?.role === "admin";
   const isAdminUser = displayRole === "admin" || isCloudAdmin;
 
+  const latestMeasurements = activeUser ? getLatestMeasurements(activeUser) : null;
+  const measurementHistory = activeUser ? getMeasurementHistory(activeUser, 5) : [];
+
   // Stats
-  const stats = useMemo(() => getUserStats(list, history), [list, history]);
+  const latestWeight = latestMeasurements?.weight;
+  const stats = useMemo(() => getUserStats(list, history, latestWeight), [list, history, latestWeight]);
   const overallLevel = useMemo(() => getOverallLevel(stats), [stats]);
   const rank = useMemo(() => getRankTitle(overallLevel), [overallLevel]);
-  const achievements = useMemo(() => getDisciplineAchievements(list, history), [list, history]);
+  const achievements = useMemo(() => getDisciplineAchievements(list, history, latestWeight), [list, history, latestWeight]);
 
   // Force sync activeUserId with Auth User
   useEffect(() => {
@@ -414,9 +418,6 @@ function AccountContent() {
       setActiveUserId(authUser.id);
     }
   }, [authUser, activeUserId]);
-
-  const latestMeasurements = activeUser ? getLatestMeasurements(activeUser) : null;
-  const measurementHistory = activeUser ? getMeasurementHistory(activeUser, 5) : [];
 
   const filledDisciplines = useMemo(() => {
     return list.filter((d) => history[d.slug]?.length > 0).length;

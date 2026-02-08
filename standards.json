@@ -790,7 +790,7 @@
         "frog_stretch": {
             "category": "flexibility",
             "unit": "cm",
-            "direction": "higher_better",
+            "direction": "lower_better",
             "values": [
                 25,
                 20,
@@ -932,7 +932,7 @@
         "pistol_stretch": {
             "category": "flexibility",
             "unit": "cm",
-            "direction": "higher_better",
+            "direction": "lower_better",
             "values": [
                 3,
                 1.5,

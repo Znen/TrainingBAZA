@@ -238,7 +238,7 @@ export default function RatingsPage() {
                         <div className="font-medium">{d.name}</div>
                         {myRow && myRow.place && (
                           <span className="badge badge-success">
-                            #{myRow.place} • {myRow.value} {d.unit ?? ""}
+                            #{myRow.place} • {myRow.value !== null ? (Number.isInteger(myRow.value) ? myRow.value : myRow.value.toFixed(2)) : "—"} {d.unit ?? ""}
                           </span>
                         )}
                       </div>
@@ -258,7 +258,7 @@ export default function RatingsPage() {
                               {row.place === 3 && "🥉"}
                               {row.place && row.place > 3 && `#${row.place}`}
                             </span>{" "}
-                            {row.userName}: {row.value ?? "—"}
+                            {row.userName}: {row.value !== null ? (Number.isInteger(row.value) ? row.value : row.value.toFixed(2)) : "—"}
                           </div>
                         ))}
                       </div>

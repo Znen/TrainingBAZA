@@ -106,11 +106,18 @@ function getLatestValue(items: { ts: string; value: number }[] | undefined): num
  */
 export function getStandardLevel(
     slug: string,
-    value: number
+    value: number,
+    userWeight?: number
 ): { level: StandardLevel | null; nextLevel: StandardLevel | null; progress: number; points: number } {
     const standard = STANDARDS[slug];
     if (!standard) {
         return { level: null, nextLevel: null, progress: 0, points: 0 };
+    }
+
+    // Normalize value if unit is xBW (коэффициент от веса тела)
+    let processedValue = value;
+    if (userWeight && (standard.unit === 'xBW' || standard.unit === 'xСВ')) {
+        processedValue = value / userWeight;
     }
 
     const values = standard.values;
@@ -123,8 +130,8 @@ export function getStandardLevel(
         if (threshold === null) continue;
 
         const passed = direction === 'higher_better'
-            ? value >= threshold
-            : value <= threshold;
+            ? processedValue >= threshold
+            : processedValue <= threshold;
 
         if (passed) {
             achievedIndex = i;
@@ -139,9 +146,9 @@ export function getStandardLevel(
             const threshold = values[firstValid]!;
             let progress: number;
             if (direction === 'higher_better') {
-                progress = Math.min(99, Math.max(0, (value / threshold) * 100));
+                progress = Math.min(99, Math.max(0, (processedValue / threshold) * 100));
             } else {
-                progress = Math.min(99, Math.max(0, (threshold / value) * 100));
+                progress = Math.min(99, Math.max(0, (threshold / processedValue) * 100));
             }
             return {
                 level: null,
@@ -165,10 +172,10 @@ export function getStandardLevel(
 
         if (direction === 'higher_better') {
             const range = nextThreshold - currentThreshold;
-            progress = range > 0 ? Math.min(99, ((value - currentThreshold) / range) * 100) : 0;
+            progress = range > 0 ? Math.min(99, ((processedValue - currentThreshold) / range) * 100) : 0;
         } else {
             const range = currentThreshold - nextThreshold;
-            progress = range > 0 ? Math.min(99, ((currentThreshold - value) / range) * 100) : 0;
+            progress = range > 0 ? Math.min(99, ((currentThreshold - processedValue) / range) * 100) : 0;
         }
         progress = Math.max(0, Math.round(progress));
     }
@@ -187,7 +194,8 @@ export function getStandardLevel(
 export function calculateStatLevel(
     stat: StatType,
     disciplines: Discipline[],
-    history: HistoryBySlug
+    history: HistoryBySlug,
+    userWeight?: number
 ): StatLevel {
     const statInfo = STATS[stat];
     const relevantDisciplines = disciplines.filter(d => d.stat === stat);
@@ -210,7 +218,7 @@ export function calculateStatLevel(
     for (const d of relevantDisciplines) {
         const value = getLatestValue(history[d.slug]);
         if (value !== null) {
-            const { points } = getStandardLevel(d.slug, value);
+            const { points } = getStandardLevel(d.slug, value, userWeight);
             totalPoints += points;
             count++;
         }
@@ -236,10 +244,11 @@ export function calculateStatLevel(
  */
 export function getUserStats(
     disciplines: Discipline[],
-    history: HistoryBySlug
+    history: HistoryBySlug,
+    userWeight?: number
 ): StatLevel[] {
     const statTypes: StatType[] = ['strength', 'endurance', 'agility', 'flexibility'];
-    return statTypes.map(stat => calculateStatLevel(stat, disciplines, history));
+    return statTypes.map(stat => calculateStatLevel(stat, disciplines, history, userWeight));
 }
 
 /**
@@ -273,7 +282,8 @@ export function getRankTitle(level: number): { title: string; titleRu: string; c
  */
 export function getDisciplineAchievements(
     disciplines: Discipline[],
-    history: HistoryBySlug
+    history: HistoryBySlug,
+    userWeight?: number
 ): Array<{
     discipline: Discipline;
     value: number | null;
@@ -304,7 +314,7 @@ export function getDisciplineAchievements(
         }
 
         const value = latestItem.value;
-        const { level, nextLevel, progress } = getStandardLevel(d.slug, value);
+        const { level, nextLevel, progress } = getStandardLevel(d.slug, value, userWeight);
 
         return {
             discipline: d,

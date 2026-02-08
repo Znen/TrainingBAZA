@@ -4,6 +4,7 @@
 import type { User } from "./users";
 import type { HistoryStore } from "./results";
 import { getLatest } from "./results";
+import { getLatestMeasurements } from "./users";
 
 export type DisciplineRow = {
     userId: string;
@@ -63,15 +64,29 @@ export function calculateDisciplineRating(
     const lowerBetter = discipline.direction === "lower_better";
     const totalUsers = users.length;
 
+    // Check if discipline needs normalization
+    const needsNormalization = discipline.unit === "xBW" || discipline.unit === "xСВ";
+
     // Собираем последние значения
     const rows: DisciplineRow[] = users.map((u) => {
         const userHistory = store[u.id] ?? {};
         const arr = userHistory[discipline.slug];
         const latest = getLatest(arr);
+
+        let value = latest?.value ?? null;
+
+        // Normalize if needed
+        if (value !== null && needsNormalization) {
+            const m = getLatestMeasurements(u);
+            if (m?.weight) {
+                value = value / m.weight;
+            }
+        }
+
         return {
             userId: u.id,
             userName: u.name,
-            value: latest?.value ?? null,
+            value,
             place: null,
             points: 0,
         };
