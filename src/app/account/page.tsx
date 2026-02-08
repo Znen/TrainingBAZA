@@ -18,7 +18,7 @@ import {
   type User,
   type BodyMeasurement,
 } from "@/lib/users";
-import { loadHistoryStore, type HistoryBySlug, type HistoryStore, type HistoryItem } from "@/lib/results";
+import { loadHistoryStore, saveHistoryStore, type HistoryBySlug, type HistoryStore, type HistoryItem } from "@/lib/results";
 import {
   getUserStats,
   getOverallLevel,
@@ -306,6 +306,7 @@ function AccountContent() {
       }
 
       saveUsers(currentUsers);
+      saveHistoryStore(currentStore);
       setUsers([...currentUsers]);
 
       if (initialActive) {
