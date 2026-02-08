@@ -659,13 +659,8 @@ function AccountContent() {
           <div className="bg-zinc-900 border border-white/10 p-6 max-w-md w-full relative" onClick={e => e.stopPropagation()}>
             <button className="absolute top-2 right-2 text-zinc-500 hover:text-white" onClick={() => setShowInstructions(false)}>✕</button>
             <h3 className="text-xl font-black italic uppercase mb-4 text-white">Как делать замеры</h3>
-            <div className="aspect-[3/4] bg-zinc-800 flex items-center justify-center text-zinc-600 mb-4 border border-white/5">
-              {/* Placeholder for schematic image */}
-              <div className="text-center">
-                <span className="text-4xl block mb-2">🧍</span>
-                <p className="text-xs font-mono uppercase">Схема замеров</p>
-                <p className="text-[10px] mt-1">(Изображение загружается...)</p>
-              </div>
+            <div className="bg-zinc-800 flex items-center justify-center mb-4 border border-white/5 p-2">
+              <img src="/measurements.jpg" alt="Схема замеров" className="w-full h-auto max-h-[60vh] object-contain rounded-sm" />
             </div>
             <p className="text-xs text-zinc-400 leading-relaxed">
               Для точности результатов проводите замеры утром натощак, в расслабленном состоянии. Используйте сантиметровую ленту.
