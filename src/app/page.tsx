@@ -329,7 +329,8 @@ function DebugFooter({ user, activeProgram, loadError, viewDate }: any) {
             Refreshed: {new Date().toLocaleTimeString()}{"\n"}
             Active Prog ID: {activeProgram ? activeProgram.id : 'null'}{"\n"}
             Load Error: {loadError ? 'Yes' : 'No'}{"\n"}
-            View Date: {viewDate.toISOString().split('T')[0]}
+            View Date: {viewDate.toISOString().split('T')[0]}{"\n"}
+            Supabase URL: {process.env.NEXT_PUBLIC_SUPABASE_URL}
           </pre>
 
           <div className="border-t border-zinc-600 pt-2 mb-2">

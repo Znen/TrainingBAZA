@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef } from "react";
+import { supabase } from "@/lib/supabase";
 import disciplines from "../../../disciplines.json";
 import {
   loadUsers,
@@ -246,26 +247,58 @@ function AccountContent() {
       if (authUser) {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         addLog(`Connecting to: ${supabaseUrl?.slice(0, 20)}...`);
+
+        // Helper to wrap Supabase calls in a timeout
+        const withTimeout = async (promise: Promise<any>, ms: number = 10000) => {
+          const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), ms));
+          return Promise.race([promise, timeout]);
+        };
+
         try {
-          const profile = await getCloudProfile(authUser.id);
+          addLog("Fetching profile...");
+          const profile = await withTimeout(getCloudProfile(authUser.id), 8000);
           addLog("Profile fetch: OK");
 
-          // Update local user with Cloud Profile data
           const currentUser = currentUsers.find(x => x.id === authUser.id);
           if (currentUser && profile) {
             currentUser.name = profile.name || currentUser.name;
             currentUser.role = (profile.role === 'admin' ? 'admin' : 'user');
-            // Optionally sync avatar if needed
-            // currentUser.avatar = profile.avatar || currentUser.avatar;
           }
 
           // Sync Measurements
-          const cloudMeasurements = await getCloudMeasurements(authUser.id);
-          addLog(`Stats synced: ${cloudMeasurements.length} measurements`);
+          addLog("Fetching measurements...");
+          const cloudMeasurements = await withTimeout(getCloudMeasurements(authUser.id), 10000);
+          addLog(`Stats synced: ${cloudMeasurements?.length || 0} measurements`);
           if (currentUser) {
             const measurementsMap = new Map<string, BodyMeasurement>();
             currentUser.measurements?.forEach(m => measurementsMap.set(m.ts, m));
-            cloudMeasurements.forEach((cm: CloudMeasurement) => {
+
+            // Local -> Cloud (Migration)
+            const localToCloudMeasurements: any[] = [];
+            currentUser.measurements?.forEach(m => {
+              // Check if THIS specific measurement (timestamp + fields) is in cloud
+              // (Simplification: check if timestamp exists in cloudMeasurements)
+              const inCloud = cloudMeasurements?.some((cm: any) => cm.recorded_at === m.ts);
+              if (!inCloud) {
+                if (m.weight) localToCloudMeasurements.push({ user_id: authUser.id, type: 'weight', value: m.weight, recorded_at: m.ts });
+                if (m.height) localToCloudMeasurements.push({ user_id: authUser.id, type: 'height', value: m.height, recorded_at: m.ts });
+                if (m.chest) localToCloudMeasurements.push({ user_id: authUser.id, type: 'chest', value: m.chest, recorded_at: m.ts });
+                if (m.waist) localToCloudMeasurements.push({ user_id: authUser.id, type: 'waist', value: m.waist, recorded_at: m.ts });
+                if (m.hips) localToCloudMeasurements.push({ user_id: authUser.id, type: 'hips', value: m.hips, recorded_at: m.ts });
+                if (m.biceps) localToCloudMeasurements.push({ user_id: authUser.id, type: 'biceps', value: m.biceps, recorded_at: m.ts });
+                if (m.shoulders) localToCloudMeasurements.push({ user_id: authUser.id, type: 'shoulders', value: m.shoulders, recorded_at: m.ts });
+                if (m.glutes) localToCloudMeasurements.push({ user_id: authUser.id, type: 'glutes', value: m.glutes, recorded_at: m.ts });
+              }
+            });
+
+            if (localToCloudMeasurements.length > 0) {
+              addLog(`Pushing ${localToCloudMeasurements.length} stats...`);
+              await withTimeout(supabase.from('measurements').insert(localToCloudMeasurements) as any, 10000);
+              addLog("Stats pushed: OK");
+            }
+
+            // Cloud -> Local
+            cloudMeasurements?.forEach((cm: CloudMeasurement) => {
               const existing: BodyMeasurement = measurementsMap.get(cm.recorded_at) || { ts: cm.recorded_at };
               if (cm.type === 'weight') existing.weight = cm.value;
               if (cm.type === 'height') existing.height = cm.value;
@@ -282,22 +315,20 @@ function AccountContent() {
           }
 
           // Sync Results
-          const cloudResults = await getCloudResults(authUser.id); // Explicitly fetch for this user
+          addLog("Fetching history...");
+          const cloudResults = await withTimeout(getCloudResults(authUser.id), 20000); // 20s for large history
           addLog(`History synced: ${cloudResults?.length || 0} entries`);
+
           if (cloudResults && cloudResults.length > 0) {
             cloudResults.forEach((r: CloudResult) => {
-              // Ensure we use the correct user_id bucket (should match authUser.id)
               const targetId = r.user_id || authUser.id;
-
               if (!currentStore[targetId]) currentStore[targetId] = {};
               if (!currentStore[targetId][r.discipline_slug]) {
                 currentStore[targetId][r.discipline_slug] = [];
               }
-
               const exists = currentStore[targetId][r.discipline_slug].some(
-                (local: HistoryItem) => local.ts === r.recorded_at && local.value === Number(r.value)
+                (local: HistoryItem) => local.ts === r.recorded_at
               );
-
               if (!exists) {
                 currentStore[targetId][r.discipline_slug].push({
                   ts: r.recorded_at,
@@ -305,8 +336,30 @@ function AccountContent() {
                 });
               }
             });
-          } else {
-            console.log("No cloud results found for user:", authUser.id);
+          }
+
+          // Local -> Cloud Migration (Results)
+          const localToCloudResults = [];
+          if (currentStore[authUser.id]) {
+            for (const slug in currentStore[authUser.id]) {
+              for (const item of currentStore[authUser.id][slug]) {
+                const inCloud = cloudResults?.some((cr: CloudResult) => cr.recorded_at === item.ts && cr.discipline_slug === slug);
+                if (!inCloud) {
+                  localToCloudResults.push({
+                    user_id: authUser.id,
+                    discipline_slug: slug,
+                    value: item.value,
+                    recorded_at: item.ts
+                  });
+                }
+              }
+            }
+          }
+
+          if (localToCloudResults.length > 0) {
+            addLog(`Pushing ${localToCloudResults.length} records...`);
+            await withTimeout(supabase.from('results').insert(localToCloudResults) as any, 20000);
+            addLog("Records pushed: OK");
           }
 
           addLog("All data synced successfully.");
@@ -664,7 +717,10 @@ function AccountContent() {
         <div className="mt-8 p-4 bg-zinc-900/50 border border-white/5 rounded text-[10px] font-mono text-zinc-500">
           <div className="flex justify-between items-center mb-2">
             <span className="text-zinc-400 font-bold uppercase">System Debug</span>
-            <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="text-red-500 underline">Clear & Reset</button>
+            <div className="flex gap-2">
+              <button onClick={() => window.location.reload()} className="text-blue-500 underline">Sync</button>
+              <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="text-red-500 underline">Reset</button>
+            </div>
           </div>
           {syncLogs.map((l, i) => <div key={i}>{l}</div>)}
           {authUser && <div className="mt-2 text-zinc-600">ID: {authUser.id.slice(0, 8)}...</div>}

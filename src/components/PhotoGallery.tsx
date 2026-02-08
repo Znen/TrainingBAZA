@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { uploadProgressPhoto, getProgressPhotos, type ProgressPhoto } from "@/lib/cloudSync";
+import { uploadProgressPhoto, getProgressPhotos, deleteProgressPhoto, type ProgressPhoto } from "@/lib/cloudSync";
 
 interface PhotoGalleryProps {
     userId: string;
@@ -40,6 +40,20 @@ export function PhotoGallery({ userId }: PhotoGalleryProps) {
         setUploading(false);
     };
 
+    const handleDelete = async (photo: ProgressPhoto) => {
+        if (!confirm("Удалить это фото?")) return;
+
+        setLoading(true);
+        const { error } = await deleteProgressPhoto(photo);
+        if (error) {
+            alert("Ошибка удаления: " + error);
+        } else {
+            setSelectedPhoto(null);
+            loadPhotos();
+        }
+        setLoading(false);
+    };
+
     return (
         <div className="bg-zinc-900/10 border border-white/5 overflow-hidden mb-8">
             <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center bg-white/5">
@@ -75,6 +89,13 @@ export function PhotoGallery({ userId }: PhotoGalleryProps) {
                                 className="aspect-square relative group cursor-pointer overflow-hidden border border-white/5 bg-zinc-800"
                                 onClick={() => setSelectedPhoto(photo)}
                             >
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(photo); }}
+                                    className="absolute top-1 right-1 w-6 h-6 bg-red-600/80 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-[10px] font-bold z-10 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-lg"
+                                    title="Удалить"
+                                >
+                                    ✕
+                                </button>
                                 <img
                                     src={photo.full_url}
                                     alt="Progress"
@@ -108,6 +129,12 @@ export function PhotoGallery({ userId }: PhotoGalleryProps) {
                                 onClick={() => setSelectedPhoto(null)}
                             >
                                 Закрыть
+                            </button>
+                            <button
+                                className="mt-4 px-4 py-2 bg-red-500/20 text-red-500 text-xs font-bold uppercase tracking-widest hover:bg-red-500/40 transition-colors ml-4"
+                                onClick={() => handleDelete(selectedPhoto)}
+                            >
+                                Удалить
                             </button>
                         </div>
                     </div>

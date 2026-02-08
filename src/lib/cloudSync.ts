@@ -204,13 +204,18 @@ export async function uploadProgressPhoto(userId: string, file: File): Promise<{
         const fileExt = file.name.split('.').pop();
         const fileName = `${userId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
+        console.log('Uploading photo to storage:', fileName);
         const { error: uploadError } = await supabase.storage
             .from('progress-photos')
             .upload(fileName, file);
 
-        if (uploadError) throw uploadError;
+        if (uploadError) {
+            console.error('Storage upload error:', uploadError);
+            throw new Error(`Ошибка загрузки в хранилище: ${uploadError.message}`);
+        }
 
         // 2. Add to Database
+        console.log('Adding photo entry to database...');
         const { data, error: dbError } = await supabase
             .from('progress_photos')
             .insert({
@@ -221,12 +226,15 @@ export async function uploadProgressPhoto(userId: string, file: File): Promise<{
             .select()
             .single();
 
-        if (dbError) throw dbError;
+        if (dbError) {
+            console.error('Database entry error:', dbError);
+            throw new Error(`Ошибка сохранения в базу: ${dbError.message}`);
+        }
 
         return { data, error: null };
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error uploading photo:', error);
-        return { data: null, error };
+        return { data: null, error: error.message || 'Unknown error' };
     }
 }
 
@@ -255,4 +263,28 @@ export async function getProgressPhotos(userId: string): Promise<ProgressPhoto[]
             full_url: urlData.publicUrl
         };
     });
+}
+
+export async function deleteProgressPhoto(photo: ProgressPhoto): Promise<{ error: any }> {
+    try {
+        // 1. Delete from Storage
+        const { error: storageError } = await supabase.storage
+            .from('progress-photos')
+            .remove([photo.storage_path]);
+
+        if (storageError) throw storageError;
+
+        // 2. Delete from Database
+        const { error: dbError } = await supabase
+            .from('progress_photos')
+            .delete()
+            .eq('id', photo.id);
+
+        if (dbError) throw dbError;
+
+        return { error: null };
+    } catch (error: any) {
+        console.error('Error deleting photo:', error);
+        return { error: error.message || 'Unknown error' };
+    }
 }
