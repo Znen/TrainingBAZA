@@ -193,10 +193,15 @@ function AccountContent() {
 
   // Measurement State
   const [showMeasurementForm, setShowMeasurementForm] = useState(false);
+  const [showInstructions, setShowInstructions] = useState(false);
   const [newWeight, setNewWeight] = useState("");
+  const [newHeight, setNewHeight] = useState("");
   const [newChest, setNewChest] = useState("");
   const [newWaist, setNewWaist] = useState("");
   const [newHips, setNewHips] = useState("");
+  const [newBiceps, setNewBiceps] = useState("");
+  const [newShoulders, setNewShoulders] = useState("");
+  const [newGlutes, setNewGlutes] = useState("");
 
   useEffect(() => {
     // LOAD DATA
@@ -420,9 +425,13 @@ function AccountContent() {
   const handleAddMeasurement = () => {
     const measurement: Omit<BodyMeasurement, "ts"> = {};
     if (newWeight) measurement.weight = parseFloat(newWeight);
+    if (newHeight) measurement.height = parseFloat(newHeight);
     if (newChest) measurement.chest = parseFloat(newChest);
     if (newWaist) measurement.waist = parseFloat(newWaist);
     if (newHips) measurement.hips = parseFloat(newHips);
+    if (newBiceps) measurement.biceps = parseFloat(newBiceps);
+    if (newShoulders) measurement.shoulders = parseFloat(newShoulders);
+    if (newGlutes) measurement.glutes = parseFloat(newGlutes);
 
     if (Object.keys(measurement).length === 0) return;
 
@@ -434,14 +443,18 @@ function AccountContent() {
       const ts = new Date().toISOString();
       const promises = [];
       if (measurement.weight) promises.push(addCloudMeasurement({ user_id: authUser.id, type: 'weight', value: measurement.weight, recorded_at: ts }));
+      if (measurement.height) promises.push(addCloudMeasurement({ user_id: authUser.id, type: 'height', value: measurement.height, recorded_at: ts }));
       if (measurement.chest) promises.push(addCloudMeasurement({ user_id: authUser.id, type: 'chest', value: measurement.chest, recorded_at: ts }));
       if (measurement.waist) promises.push(addCloudMeasurement({ user_id: authUser.id, type: 'waist', value: measurement.waist, recorded_at: ts }));
       if (measurement.hips) promises.push(addCloudMeasurement({ user_id: authUser.id, type: 'hips', value: measurement.hips, recorded_at: ts }));
+      if (measurement.biceps) promises.push(addCloudMeasurement({ user_id: authUser.id, type: 'biceps', value: measurement.biceps, recorded_at: ts }));
+      if (measurement.shoulders) promises.push(addCloudMeasurement({ user_id: authUser.id, type: 'shoulders', value: measurement.shoulders, recorded_at: ts }));
+      if (measurement.glutes) promises.push(addCloudMeasurement({ user_id: authUser.id, type: 'glutes', value: measurement.glutes, recorded_at: ts }));
       Promise.all(promises).catch(console.error);
     }
 
     setShowMeasurementForm(false);
-    setNewWeight(""); setNewChest(""); setNewWaist(""); setNewHips("");
+    setNewWeight(""); setNewHeight(""); setNewChest(""); setNewWaist(""); setNewHips(""); setNewBiceps(""); setNewShoulders(""); setNewGlutes("");
   };
 
 
