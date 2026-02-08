@@ -205,7 +205,29 @@ function AccountContent() {
       const savedActive = loadActiveUserId();
       let initialActive = savedActive && currentUsers.some((u) => u.id === savedActive) ? savedActive : currentUsers[0]?.id;
 
-      // Always load history store (use authUser.id or placeholder as fallback for migration)
+      // Ensure Auth User Exists in Local State immediately
+      if (authUser) {
+        initialActive = authUser.id;
+        let currentUser = currentUsers.find(x => x.id === authUser.id);
+        const defaultName = authUser.user_metadata?.name || authUser.email?.split('@')[0] || "Атлет";
+
+        if (!currentUser) {
+          currentUser = {
+            id: authUser.id,
+            name: defaultName,
+            email: authUser.email,
+            role: 'user',
+            avatarType: "emoji",
+            measurements: []
+          };
+          currentUsers.push(currentUser);
+        }
+
+        // Fallback if name is missing
+        if (!currentUser.name) currentUser.name = defaultName;
+      }
+
+      // Always load history store
       const storeId = initialActive || authUser?.id || "guest";
       currentStore = loadHistoryStore(storeId);
 
@@ -213,29 +235,15 @@ function AccountContent() {
       if (authUser) {
         try {
           const profile = await getCloudProfile(authUser.id);
-          const role = (profile?.role === 'admin') ? 'admin' : 'user';
-          const name = profile?.name || authUser.user_metadata?.name || "Пользователь";
 
-          let currentUser = currentUsers.find(x => x.id === authUser.id);
-          if (!currentUser) {
-            currentUser = {
-              id: authUser.id,
-              name: name,
-              email: authUser.email,
-              role: role,
-              avatarType: "emoji",
-              measurements: []
-            };
-            currentUsers.push(currentUser);
-          } else {
-            // Update local if needed
-            if (currentUser.role !== role || (profile?.name && currentUser.name !== profile.name)) {
-              currentUser.name = name;
-              currentUser.role = role;
-            }
+          // Update local user with Cloud Profile data
+          const currentUser = currentUsers.find(x => x.id === authUser.id);
+          if (currentUser && profile) {
+            currentUser.name = profile.name || currentUser.name;
+            currentUser.role = (profile.role === 'admin' ? 'admin' : 'user');
+            // Optionally sync avatar if needed
+            // currentUser.avatar = profile.avatar || currentUser.avatar;
           }
-
-          initialActive = authUser.id;
 
           // Sync Measurements
           const cloudMeasurements = await getCloudMeasurements(authUser.id);
@@ -256,23 +264,27 @@ function AccountContent() {
 
           // Sync Results
           const cloudResults = await getAllCloudResults();
-          cloudResults.forEach((r: CloudResult) => {
-            if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
-            if (!currentStore[r.user_id][r.discipline_slug]) {
-              currentStore[r.user_id][r.discipline_slug] = [];
-            }
-            const exists = currentStore[r.user_id][r.discipline_slug].some(
-              (local: HistoryItem) => local.ts === r.recorded_at && local.value === Number(r.value)
-            );
-            if (!exists) {
-              currentStore[r.user_id][r.discipline_slug].push({
-                ts: r.recorded_at,
-                value: Number(r.value),
-              });
-            }
-          });
+          if (cloudResults && cloudResults.length > 0) {
+            cloudResults.forEach((r: CloudResult) => {
+              if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
+              if (!currentStore[r.user_id][r.discipline_slug]) {
+                currentStore[r.user_id][r.discipline_slug] = [];
+              }
+              const exists = currentStore[r.user_id][r.discipline_slug].some(
+                (local: HistoryItem) => local.ts === r.recorded_at && local.value === Number(r.value)
+              );
+              if (!exists) {
+                currentStore[r.user_id][r.discipline_slug].push({
+                  ts: r.recorded_at,
+                  value: Number(r.value),
+                });
+              }
+            });
+          }
 
-        } catch (e) { console.error(e); }
+        } catch (e) {
+          console.error("Cloud sync failed:", e);
+        }
       }
 
       saveUsers(currentUsers);
