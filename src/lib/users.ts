@@ -187,7 +187,27 @@ export function addMeasurement(
 export function getLatestMeasurements(user: User): BodyMeasurement | null {
     const m = user.measurements;
     if (!m || m.length === 0) return null;
-    return m[m.length - 1];
+
+    // Create a composite object starting with the most recent entry
+    const result: BodyMeasurement = { ...m[m.length - 1] };
+
+    // Fields to look for in history if missing in the latest entry
+    const fields: (keyof BodyMeasurement)[] = [
+        "weight", "height", "chest", "waist", "hips",
+        "biceps", "shoulders", "glutes"
+    ];
+
+    // Iterate backwards through history to fill gaps
+    for (let i = m.length - 2; i >= 0; i--) {
+        const entry = m[i];
+        for (const f of fields) {
+            if (result[f] === undefined && entry[f] !== undefined) {
+                // @ts-ignore: dynamic access is safe here given the type definition
+                result[f] = entry[f];
+            }
+        }
+    }
+    return result;
 }
 
 /**
