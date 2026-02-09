@@ -22,6 +22,7 @@ import {
   formatUtc,
 } from "@/lib/results";
 import {
+  getCloudResults,
   getAllCloudResults,
   getCloudProfile,
   getAllCloudProfiles,
@@ -187,7 +188,11 @@ function ResultsContent() {
       // 2. Cloud Data (if authenticated)
       if (authUser) {
         try {
-          const cloudResults = await getAllCloudResults();
+          // If admin - fetch all athletes data, if user - only their own
+          const cloudResults = isCurrentUserAdmin
+            ? await getAllCloudResults()
+            : await getCloudResults(authUser.id);
+
           cloudResults.forEach((r: CloudResult) => {
             if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
             if (!currentStore[r.user_id][r.discipline_slug]) {
@@ -212,7 +217,7 @@ function ResultsContent() {
     };
 
     loadToStore();
-  }, [authUser]); // Reload if auth changes
+  }, [authUser, isCurrentUserAdmin]); // Reload if auth OR role changes
 
   // Update form values when Store OR TargetUser changes
   useEffect(() => {
@@ -273,6 +278,11 @@ function ResultsContent() {
   };
 
   const switchTargetUser = (id: string) => {
+    // Safeguard: non-admins can only view/edit themselves
+    if (!isCurrentUserAdmin && authUser && id !== authUser.id) {
+      console.warn("Unauthorized attempt to switch user");
+      return;
+    }
     setTargetUserId(id);
   };
 

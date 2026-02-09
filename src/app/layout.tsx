@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 const navLinks = [
-  { href: "/", label: "Главная", icon: "🏠" },
+  { href: "/", label: "Календарь", icon: "🏠" },
   { href: "/results", label: "Результаты", icon: "📊" },
   { href: "/program", label: "Программа", icon: "📅" },
   { href: "/ratings", label: "Рейтинги", icon: "🏆" },

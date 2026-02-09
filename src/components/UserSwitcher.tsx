@@ -289,7 +289,9 @@ export default function UserSwitcher() {
                     <button
                         onClick={async () => {
                             await signOut();
+                            localStorage.removeItem("trainingBaza:activeUserId:v1");
                             setShowDropdown(false);
+                            window.location.reload();
                         }}
                         className="w-full px-3 py-2 text-xs bg-red-600/20 hover:bg-red-600/40 border border-red-600 rounded-lg text-red-400 transition-colors"
                     >
