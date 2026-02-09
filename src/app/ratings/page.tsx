@@ -72,6 +72,9 @@ export default function RatingsPage() {
 
           const mappedStore: HistoryStore = {};
           cloudResults.forEach(r => {
+            // STRICT: Ignore results without user_id to prevent "ghost" data
+            if (!r.user_id) return;
+
             if (!mappedStore[r.user_id]) mappedStore[r.user_id] = {};
             if (!mappedStore[r.user_id][r.discipline_slug]) {
               mappedStore[r.user_id][r.discipline_slug] = [];
