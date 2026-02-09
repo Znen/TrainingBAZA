@@ -59,15 +59,15 @@ export default function RootLayout({
 
           {/* Нижняя навигация */}
           <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-white/5 bg-black/90 backdrop-blur-xl pb-safe">
-            <div className="mx-auto flex max-w-5xl h-16 items-center justify-around">
+            <div className="mx-auto flex max-w-5xl h-16 items-center justify-between px-2 sm:px-6">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex flex-col items-center gap-1 transition-all hover:scale-110 active:scale-90 px-3"
+                  className="flex flex-col items-center gap-1 transition-all hover:scale-110 active:scale-90 px-1 py-1"
                 >
                   <span className="text-xl opacity-80">{link.icon}</span>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500 text-center leading-none">
                     {link.label}
                   </span>
                 </Link>
