@@ -289,7 +289,10 @@ export default function UserSwitcher() {
                     <button
                         onClick={async () => {
                             await signOut();
+                            // CRITICAL: Clear ALL user-specific localStorage to prevent data leakage
                             localStorage.removeItem("trainingBaza:activeUserId:v1");
+                            localStorage.removeItem("trainingBaza:history:v2");
+                            localStorage.removeItem("trainingBaza:users:v2");
                             setShowDropdown(false);
                             window.location.reload();
                         }}
