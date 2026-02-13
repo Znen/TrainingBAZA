@@ -45,13 +45,11 @@ function SyncContent() {
             if (historyJson) {
                 const store = JSON.parse(historyJson);
                 // HistoryStore is Record<userId, Record<slug, HistoryItem[]>>
-                // We merge everything for this sync attempt to be safe
-                localHistory = {};
-                Object.values(store).forEach((userHistory: any) => {
-                    Object.entries(userHistory).forEach(([slug, items]: [string, any]) => {
-                        localHistory[slug] = [...(localHistory[slug] || []), ...items];
-                    });
-                });
+                // STRICT: Only sync data belonging to THIS user (by auth ID)
+                const userHistory = store[user.id];
+                if (userHistory && typeof userHistory === 'object') {
+                    localHistory = userHistory;
+                }
             } else {
                 // 2. Fallback to old key
                 historyJson = localStorage.getItem("historyStore");

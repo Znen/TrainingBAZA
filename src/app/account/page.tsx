@@ -239,9 +239,11 @@ function AccountContent() {
         if (!currentUser.name) currentUser.name = defaultName;
       }
 
-      // Always load history store
-      const storeId = initialActive || authUser?.id || "guest";
-      currentStore = loadHistoryStore(storeId);
+      // Load history store ONLY as fallback for non-authenticated users
+      if (!authUser) {
+        const storeId = initialActive || "guest";
+        currentStore = loadHistoryStore(storeId);
+      }
 
       // Sync with Cloud if Auth
       if (authUser) {
@@ -321,7 +323,16 @@ function AccountContent() {
 
           if (cloudResults && cloudResults.length > 0) {
             cloudResults.forEach((r: CloudResult) => {
-              const targetId = r.user_id || authUser.id;
+              // STRICT: If user_id is missing, ignore it. Do NOT default to authUser.id
+              // This prevents "ghost" records from attaching to the current user.
+              if (!r.user_id) return;
+
+              const targetId = r.user_id;
+
+              // Extra safeguard: if not admin, only process own data
+              const isCurrentUserAdmin = currentUser?.role === 'admin';
+              if (!isCurrentUserAdmin && targetId !== authUser.id) return;
+
               if (!currentStore[targetId]) currentStore[targetId] = {};
               if (!currentStore[targetId][r.discipline_slug]) {
                 currentStore[targetId][r.discipline_slug] = [];
@@ -370,7 +381,10 @@ function AccountContent() {
       }
 
       saveUsers(currentUsers);
-      saveHistoryStore(currentStore);
+      // STRICT: Do NOT save cloud data to localStorage — it causes cross-user contamination
+      if (!authUser) {
+        saveHistoryStore(currentStore);
+      }
       setUsers([...currentUsers]);
 
       if (initialActive) {

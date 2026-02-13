@@ -175,18 +175,12 @@ function ResultsContent() {
     saveActiveUserId(initialActive);
   }, [authUser, authLoading]);
 
-  // Load Data Effect (Local + Cloud)
+  // Load Data Effect (Cloud-first, localStorage only as fallback for guests)
   useEffect(() => {
     const loadToStore = async () => {
-      // 1. Initial Load from LocalStorage (for active user, or ideally all known history if structure allowed, 
-      // but loadHistoryStore currently loads everything from the single key if it's migrated, 
-      // actually loadHistoryStore loads ALL history from LS key 'trainingBaza:history:v2')
-      // Wait, loadHistoryStore argument 'defaultUserId' is only used for migration. 
-      // It returns the WHOLE store.
-      const currentStore = loadHistoryStore(activeUserId || "guest");
-
-      // 2. Cloud Data (if authenticated)
+      // If authenticated — use CLOUD as source of truth, do NOT touch localStorage
       if (authUser) {
+        const cloudStore: HistoryStore = {};
         try {
           // If admin - fetch all athletes data, if user - only their own
           const cloudResults = isCurrentUserAdmin
@@ -194,25 +188,26 @@ function ResultsContent() {
             : await getCloudResults(authUser.id);
 
           cloudResults.forEach((r: CloudResult) => {
-            if (!currentStore[r.user_id]) currentStore[r.user_id] = {};
-            if (!currentStore[r.user_id][r.discipline_slug]) {
-              currentStore[r.user_id][r.discipline_slug] = [];
+            if (!r.user_id) return; // skip orphan records
+            if (!cloudStore[r.user_id]) cloudStore[r.user_id] = {};
+            if (!cloudStore[r.user_id][r.discipline_slug]) {
+              cloudStore[r.user_id][r.discipline_slug] = [];
             }
-            const exists = currentStore[r.user_id][r.discipline_slug].some(
-              (local: HistoryItem) => local.ts === r.recorded_at && local.value === Number(r.value)
-            );
-            if (!exists) {
-              currentStore[r.user_id][r.discipline_slug].push({
-                ts: r.recorded_at,
-                value: Number(r.value),
-              });
-            }
+            cloudStore[r.user_id][r.discipline_slug].push({
+              ts: r.recorded_at,
+              value: Number(r.value),
+            });
           });
         } catch (err) {
           console.error("Failed to load cloud results in Results:", err);
         }
+        // STRICT: Use cloud data only, do NOT save to localStorage
+        setStore(cloudStore);
+        return;
       }
 
+      // Fallback for guests: load from localStorage
+      const currentStore = loadHistoryStore(activeUserId || "guest");
       setStore(currentStore);
     };
 

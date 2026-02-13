@@ -55,13 +55,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             if (historyJson) {
                 const store = JSON.parse(historyJson);
                 // HistoryStore is Record<userId, Record<slug, HistoryItem[]>>
-                // We sync data for "guest" or any user that was used locally
-                localHistory = {};
-                Object.values(store).forEach((userHistory: any) => {
-                    Object.entries(userHistory).forEach(([slug, items]: [string, any]) => {
-                        localHistory[slug] = [...(localHistory[slug] || []), ...items];
-                    });
-                });
+                // STRICT: Only sync data belonging to THIS user (by auth ID)
+                const userHistory = store[user.id];
+                if (userHistory && typeof userHistory === 'object') {
+                    localHistory = userHistory;
+                }
             } else {
                 // 2. Fallback to old key
                 historyJson = localStorage.getItem("historyStore");

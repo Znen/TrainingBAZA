@@ -166,7 +166,7 @@ export default function UserSwitcher() {
         : "Гость";
 
     const displayAvatar = authUser
-        ? (cloudProfile?.avatar || activeUser?.avatar)
+        ? cloudProfile?.avatar // STRICT: Only use cloud profile avatar, no local fallback
         : undefined; // Default avatar for guest
 
     // Only cloud admins get the badge
@@ -293,6 +293,9 @@ export default function UserSwitcher() {
                             localStorage.removeItem("trainingBaza:activeUserId:v1");
                             localStorage.removeItem("trainingBaza:history:v2");
                             localStorage.removeItem("trainingBaza:users:v2");
+                            localStorage.removeItem("trainingBaza:feed:v1");
+                            localStorage.removeItem("historyStore"); // legacy key
+                            localStorage.removeItem("trainingBaza:users:v1"); // legacy key
                             setShowDropdown(false);
                             window.location.reload();
                         }}
@@ -325,7 +328,7 @@ export default function UserSwitcher() {
                     onClick={() => setShowDropdown(!showDropdown)}
                     className="flex items-center gap-2 px-3 py-1.5 rounded-lg border-2 border-blue-500 bg-zinc-800 hover:bg-zinc-700 text-sm text-white cursor-pointer transition-colors"
                 >
-                    {renderAvatar(displayAvatar)}
+                    {renderAvatar(displayAvatar ?? undefined)}
                     <span className="max-w-[80px] sm:max-w-[150px] truncate">{displayName}</span>
                     {showAdminBadge && <span className="text-xs shrink-0">👑</span>}
                     <span className="text-xs opacity-50 shrink-0">{showDropdown ? "▲" : "▼"}</span>
