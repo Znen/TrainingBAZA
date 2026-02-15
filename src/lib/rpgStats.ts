@@ -239,8 +239,12 @@ export function calculateStatLevel(
     };
 }
 
+// Stat types excluded from cabinet display (retired)
+const RETIRED_STATS: StatType[] = ['flexibility'];
+
 /**
  * Получить все характеристики пользователя
+ * flexibility исключён — подвижность теперь информационная
  */
 export function getUserStats(
     disciplines: Discipline[],
@@ -248,7 +252,9 @@ export function getUserStats(
     userWeight?: number
 ): StatLevel[] {
     const statTypes: StatType[] = ['strength', 'endurance', 'agility', 'flexibility'];
-    return statTypes.map(stat => calculateStatLevel(stat, disciplines, history, userWeight));
+    return statTypes
+        .filter(s => !RETIRED_STATS.includes(s))
+        .map(stat => calculateStatLevel(stat, disciplines, history, userWeight));
 }
 
 /**
@@ -279,6 +285,7 @@ export function getRankTitle(level: number): { title: string; titleRu: string; c
 
 /**
  * Получить детальную информацию о достижениях пользователя по дисциплинам
+ * Retired disciplines (stat: flexibility) are excluded
  */
 export function getDisciplineAchievements(
     disciplines: Discipline[],
@@ -293,7 +300,8 @@ export function getDisciplineAchievements(
     nextLevel: StandardLevel | null;
     progress: number;
 }> {
-    return disciplines.map(d => {
+    const activeDisciplines = disciplines.filter(d => !RETIRED_STATS.includes(d.stat));
+    return activeDisciplines.map(d => {
         // Find latest item
         const items = history[d.slug];
         let latestItem = null;

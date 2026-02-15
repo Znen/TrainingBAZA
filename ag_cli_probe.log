@@ -1,0 +1,114 @@
+================================================== 
+[AG] CLI PROBE started 13.02.2026 23:42:22,51 
+================================================== 
+ 
+[AG] Identity / location 
+kirwind\kir_a
+CD(before)=R:\Training_Baza\training-baza 
+CD(after)=R:\Training_Baza\training-baza 
+ 
+[AG] PATH diagnostics 
+ContainsQuote=YES 
+ 
+[AG] Tool resolution 
+C:\Program Files\nodejs\node.exe
+C:\Program Files\nodejs\npx
+C:\Program Files\nodejs\npx.cmd
+ 
+[AG] node -v 
+v24.13.0
+ 
+[AG] npm -v 
+11.6.2
+ 
+[AG] NPX probe (method A: direct call) 
+[AG] BEFORE npx.cmd --version (direct) 
+11.6.2
+[AG] AFTER npx.cmd --version (direct) (exit=0) 
+ 
+[AG] NPX probe (method B: via cmd.exe /c) 
+[AG] BEFORE npx.cmd --version (cmd /c) 
+11.6.2
+[AG] AFTER npx.cmd --version (cmd /c) (exit=0) 
+ 
+[AG] NPX probe summary: direct=0 ; cmdc=0 
+ 
+[AG] Next.js root check 
+package.json=OK 
+app=MISSING 
+pages=OK 
+ 
+[AG] Running Next build 
+-------------------------------------------------- 
+[AG] BEFORE next build 
+▲ Next.js 16.1.6 (Turbopack)
+- Environments: .env.local, .env
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 4.1s
+  Running TypeScript ...
+  Collecting page data using 31 workers ...
+  Generating static pages using 31 workers (0/12) ...
+  Generating static pages using 31 workers (3/12) 
+  Generating static pages using 31 workers (6/12) 
+  Generating static pages using 31 workers (9/12) 
+✓ Generating static pages using 31 workers (12/12) in 563.5ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /account
+├ ○ /admin
+├ ○ /auth/login
+├ ○ /auth/register
+├ ○ /program
+├ ○ /ratings
+├ ○ /results
+└ ○ /sync
+
+
+○  (Static)  prerendered as static content
+
+[AG] AFTER next build (exit=0) 
+-------------------------------------------------- 
+[AG] build finished 13.02.2026 23:42:34,66 (exit=0) 
+ 
+[AG] Post-build sanity (dir .next) 
+ Volume in drive R is Новый том
+ Volume Serial Number is B092-5FEC
+
+ Directory of R:\Training_Baza\training-baza\.next
+
+13.02.2026  23:42    <DIR>          .
+13.02.2026  23:32    <DIR>          ..
+13.02.2026  23:42               394 app-path-routes-manifest.json
+13.02.2026  23:42    <DIR>          build
+13.02.2026  23:42               494 build-manifest.json
+13.02.2026  23:42                21 BUILD_ID
+13.02.2026  18:50    <DIR>          cache
+13.02.2026  21:55    <DIR>          dev
+13.02.2026  23:42    <DIR>          diagnostics
+13.02.2026  23:42               111 export-marker.json
+13.02.2026  23:42               234 fallback-build-manifest.json
+13.02.2026  23:42             1 160 images-manifest.json
+13.02.2026  23:42             5 561 next-minimal-server.js.nft.json
+13.02.2026  23:42            82 188 next-server.js.nft.json
+13.02.2026  23:42                20 package.json
+13.02.2026  23:42             7 914 prerender-manifest.json
+13.02.2026  23:42             8 912 required-server-files.js
+13.02.2026  23:42             8 883 required-server-files.json
+13.02.2026  23:42             2 799 routes-manifest.json
+13.02.2026  23:42    <DIR>          server
+13.02.2026  23:42    <DIR>          standalone
+13.02.2026  23:42    <DIR>          static
+13.02.2026  23:42             8 697 trace
+13.02.2026  23:42             1 192 trace-build
+13.02.2026  23:42                 0 turbopack
+13.02.2026  23:42    <DIR>          types
+              16 File(s)        128 580 bytes
+              10 Dir(s)  134 169 976 832 bytes free
+ 
+================================================== 
+[AG] END-OF-SCRIPT MARKER 
+================================================== 

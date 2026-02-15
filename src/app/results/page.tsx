@@ -44,11 +44,13 @@ type Discipline = {
   stat?: string;
   has1RM?: boolean;
   icon?: string;
+  retired?: boolean;
 };
 
 import { addCloudResult } from "@/lib/cloudSync";
 import { useAuth } from "@/components/AuthProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { MobilityInfoSection } from "@/components/MobilityInfo";
 
 export default function ResultsPage() {
   return (
@@ -59,7 +61,7 @@ export default function ResultsPage() {
 }
 
 function ResultsContent() {
-  const list = disciplines as Discipline[];
+  const list = (disciplines as Discipline[]).filter(d => !d.retired);
 
   const grouped = useMemo(() => {
     return list.reduce<Record<string, Discipline[]>>((acc, d) => {
@@ -68,8 +70,8 @@ function ResultsContent() {
     }, {});
   }, [list]);
 
-  // Фиксированный порядок категорий
-  const CATEGORY_ORDER = ["Сила", "Статика", "Навыки", "Выносливость", "Бег", "Подвижность"];
+  // Фиксированный порядок категорий (Подвижность убрана — теперь информационный блок)
+  const CATEGORY_ORDER = ["Сила", "Статика", "Навыки", "Выносливость", "Бег"];
 
   const categories = useMemo(
     () => CATEGORY_ORDER.filter(cat => grouped[cat]),
@@ -411,6 +413,9 @@ function ResultsContent() {
           </section>
         ))}
       </div>
+
+      {/* Подвижность — информационные тесты */}
+      <MobilityInfoSection />
 
       {/* Подсказка для обычных пользователей */}
       {!isCurrentUserAdmin && (

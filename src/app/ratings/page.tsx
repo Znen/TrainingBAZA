@@ -31,8 +31,8 @@ export default function RatingsPage() {
     }, {});
   }, [list]);
 
-  // Фиксированный порядок категорий (как на странице Результаты)
-  const CATEGORY_ORDER = ["Сила", "Статика", "Навыки", "Выносливость", "Бег", "Подвижность"];
+  // Фиксированный порядок категорий (Подвижность исключена — информационная)
+  const CATEGORY_ORDER = ["Сила", "Статика", "Навыки", "Выносливость", "Бег"];
 
   const categories = useMemo(
     () => CATEGORY_ORDER.filter(cat => grouped[cat]),
@@ -135,7 +135,10 @@ export default function RatingsPage() {
   const { standingsBySlug, overallRows } = useMemo(() => {
     const bySlug: Record<string, DisciplineRow[]> = {};
 
-    for (const d of list) {
+    // Exclude retired/flexibility disciplines from overall rating
+    const activeDisciplines = list.filter((d: any) => d.stat !== 'flexibility');
+
+    for (const d of activeDisciplines) {
       const ranking = calculateDisciplineRating(d, users, store);
       ranking.sort((a, b) => {
         const ap = a.place ?? 1e9;
@@ -146,7 +149,7 @@ export default function RatingsPage() {
       bySlug[d.slug] = ranking;
     }
 
-    const overall = calculateOverallRating(list, users, store);
+    const overall = calculateOverallRating(activeDisciplines, users, store);
 
     return { standingsBySlug: bySlug, overallRows: overall };
   }, [users, list, store]);

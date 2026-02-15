@@ -467,7 +467,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "seated_forward_fold",
@@ -477,7 +478,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "pike_stretch",
@@ -487,7 +489,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "straddle_stretch",
@@ -497,7 +500,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "frog_stretch",
@@ -507,7 +511,8 @@
     "direction": "lower_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🐸"
+    "icon": "🐸",
+    "retired": true
   },
   {
     "slug": "lotus",
@@ -517,7 +522,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🧘"
+    "icon": "🧘",
+    "retired": true
   },
   {
     "slug": "hip_flexor",
@@ -527,7 +533,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "pancake",
@@ -537,7 +544,8 @@
     "direction": "lower_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "bridge",
@@ -547,7 +555,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🌉"
+    "icon": "🌉",
+    "retired": true
   },
   {
     "slug": "shoulder_rotation",
@@ -557,7 +566,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "shoulder_flexion",
@@ -567,7 +577,8 @@
     "direction": "higher_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "side_split",
@@ -577,7 +588,8 @@
     "direction": "lower_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "front_split",
@@ -587,7 +599,8 @@
     "direction": "lower_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   },
   {
     "slug": "pistol_stretch",
@@ -597,6 +610,7 @@
     "direction": "lower_better",
     "stat": "flexibility",
     "has1RM": false,
-    "icon": "🦋"
+    "icon": "🦋",
+    "retired": true
   }
 ]
