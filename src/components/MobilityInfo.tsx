@@ -17,6 +17,7 @@ interface MobilityTest {
     subtitle?: string;
     startingPosition: string;
     levels: MobilityLevel[];
+    thumbnailStyle?: React.CSSProperties;
 }
 
 const MOBILITY_TESTS: MobilityTest[] = [
@@ -26,6 +27,12 @@ const MOBILITY_TESTS: MobilityTest[] = [
         subtitle: "Тест подвижности тазобедренных и задней поверхности бедра",
         startingPosition:
             "Сидя на полу, ноги широко разведены и полностью выпрямлены, колени смотрят вверх, спина прямая. Наклон выполняется за счёт сгибания в тазобедренных суставах, без округления поясницы.",
+        thumbnailStyle: {
+            objectFit: "contain",
+            objectPosition: "bottom",
+            transform: "scale(1.3)",
+            transformOrigin: "bottom",
+        },
         levels: [
             {
                 level: 1,
@@ -59,6 +66,12 @@ const MOBILITY_TESTS: MobilityTest[] = [
         subtitle: "Тест подвижности задней поверхности бедра",
         startingPosition:
             "Стоя, ноги вместе, колени полностью выпрямлены. Стопы параллельны. Наклон выполняется плавно вперёд, без рывков.",
+        thumbnailStyle: {
+            objectFit: "contain",
+            objectPosition: "bottom",
+            transform: "scale(1.3)",
+            transformOrigin: "bottom",
+        },
         levels: [
             {
                 level: 1,
@@ -87,6 +100,12 @@ const MOBILITY_TESTS: MobilityTest[] = [
             "Тест подвижности плечевых суставов, позвоночника и тазобедренных",
         startingPosition:
             "Лёжа на спине. Стопы на полу на ширине таза, руки возле головы, ладони упираются в пол, пальцы направлены к плечам. Выход в мостик выполняется контролируемо.",
+        thumbnailStyle: {
+            objectFit: "contain",
+            objectPosition: "bottom",
+            transform: "scale(1.3)",
+            transformOrigin: "bottom",
+        },
         levels: [
             {
                 level: 1,
@@ -182,9 +201,11 @@ function ImageLightbox({
 function LevelCard({
     lvl,
     onImageClick,
+    imgStyle,
 }: {
     lvl: MobilityLevel;
     onImageClick: (src: string, alt: string) => void;
+    imgStyle?: React.CSSProperties;
 }) {
     const alt = `Уровень ${lvl.level}`;
 
@@ -203,6 +224,7 @@ function LevelCard({
                     fill
                     className="object-cover transition-transform duration-200 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, 25vw"
+                    style={imgStyle}
                 />
                 {/* Hover overlay hint */}
                 <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -279,8 +301,8 @@ function MobilityTestBlock({
                     {/* Level cards — items-stretch ensures equal card heights */}
                     <div
                         className={`grid gap-3 items-stretch ${test.levels.length === 4
-                                ? "grid-cols-2 md:grid-cols-4"
-                                : "grid-cols-1 md:grid-cols-3"
+                            ? "grid-cols-2 md:grid-cols-4"
+                            : "grid-cols-1 md:grid-cols-3"
                             }`}
                     >
                         {test.levels.map((lvl) => (
@@ -288,6 +310,7 @@ function MobilityTestBlock({
                                 key={lvl.level}
                                 lvl={lvl}
                                 onImageClick={onImageClick}
+                                imgStyle={test.thumbnailStyle}
                             />
                         ))}
                     </div>

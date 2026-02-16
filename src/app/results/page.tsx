@@ -61,7 +61,7 @@ export default function ResultsPage() {
 }
 
 function ResultsContent() {
-  const list = (disciplines as Discipline[]).filter(d => !d.retired);
+  const list = useMemo(() => (disciplines as Discipline[]).filter(d => !d.retired), []);
 
   const grouped = useMemo(() => {
     return list.reduce<Record<string, Discipline[]>>((acc, d) => {
