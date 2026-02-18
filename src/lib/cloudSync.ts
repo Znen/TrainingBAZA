@@ -68,30 +68,70 @@ export interface CloudResult {
 }
 
 export async function getCloudResults(userId: string): Promise<CloudResult[]> {
-    const { data, error } = await supabase
-        .from('results')
-        .select('*')
-        .eq('user_id', userId)
-        .order('recorded_at', { ascending: false });
+    let allData: CloudResult[] = [];
+    let page = 0;
+    const pageSize = 1000;
 
-    if (error) {
-        console.error('Error fetching results:', error);
-        return [];
+    while (true) {
+        const { data, error } = await supabase
+            .from('results')
+            .select('*')
+            .eq('user_id', userId)
+            .order('recorded_at', { ascending: false })
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (error) {
+            console.error('Error fetching results:', error);
+            break;
+        }
+
+        if (!data || data.length === 0) {
+            break;
+        }
+
+        allData = [...allData, ...data];
+
+        if (data.length < pageSize) {
+            break; // Последняя страница
+        }
+
+        page++;
     }
-    return data || [];
+
+    return allData;
 }
 
 export async function getAllCloudResults(): Promise<CloudResult[]> {
-    const { data, error } = await supabase
-        .from('results')
-        .select('*')
-        .order('recorded_at', { ascending: false });
+    let allData: CloudResult[] = [];
+    let page = 0;
+    const pageSize = 1000;
 
-    if (error) {
-        console.error('Error fetching all results:', error);
-        return [];
+    while (true) {
+        const { data, error } = await supabase
+            .from('results')
+            .select('*')
+            .order('recorded_at', { ascending: false })
+            .range(page * pageSize, (page + 1) * pageSize - 1);
+
+        if (error) {
+            console.error('Error fetching all results:', error);
+            break;
+        }
+
+        if (!data || data.length === 0) {
+            break;
+        }
+
+        allData = [...allData, ...data];
+
+        if (data.length < pageSize) {
+            break;
+        }
+
+        page++;
     }
-    return data || [];
+
+    return allData;
 }
 
 export async function addCloudResult(result: Omit<CloudResult, 'id'>): Promise<CloudResult | null> {
