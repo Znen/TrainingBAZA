@@ -2,8 +2,7 @@
 // Расчёт рейтингов (общий и по дисциплинам)
 
 import type { User } from "./users";
-import type { HistoryStore } from "./results";
-import { getLatest } from "./results";
+import type { LatestStore } from "./results";
 import { getLatestMeasurements } from "./users";
 
 export type DisciplineRow = {
@@ -59,7 +58,7 @@ export type Discipline = {
 export function calculateDisciplineRating(
     discipline: Discipline,
     users: User[],
-    store: HistoryStore
+    store: LatestStore
 ): DisciplineRow[] {
     const lowerBetter = discipline.direction === "lower_better";
     const totalUsers = users.length;
@@ -69,9 +68,8 @@ export function calculateDisciplineRating(
 
     // Собираем последние значения
     const rows: DisciplineRow[] = users.map((u) => {
-        const userHistory = store[u.id] ?? {};
-        const arr = userHistory[discipline.slug];
-        const latest = getLatest(arr);
+        const userLatest = store[u.id] ?? {};
+        const latest = userLatest[discipline.slug] ?? null;
 
         let value = latest?.value ?? null;
 
@@ -138,7 +136,7 @@ export function calculateDisciplineRating(
 export function calculateOverallRating(
     disciplines: Discipline[],
     users: User[],
-    store: HistoryStore
+    store: LatestStore
 ): OverallRow[] {
     // Для каждого пользователя — сумма очков
     const pointsMap: Record<string, number> = {};

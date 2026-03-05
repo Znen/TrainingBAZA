@@ -11,6 +11,9 @@ export type HistoryItem = {
 export type HistoryBySlug = Record<string, HistoryItem[]>;
 export type HistoryStore = Record<string, HistoryBySlug>; // userId -> (slug -> history[])
 
+export type LatestBySlug = Record<string, HistoryItem | null>;
+export type LatestStore = Record<string, LatestBySlug>; // userId -> (slug -> latestItem)
+
 const LS_HISTORY_KEY = "trainingBaza:history:v2";
 
 function isHistoryBySlug(obj: unknown): obj is HistoryBySlug {

@@ -299,8 +299,10 @@ export default function Home() {
         </div>
       </div>
 
-      {/* DEBUG SECTION */}
-      <DebugFooter user={user} activeProgram={activeProgram} loadError={loadError} viewDate={viewDate} />
+      {/* DEBUG SECTION — only in dev when env flag is set */}
+      {process.env.NEXT_PUBLIC_DEBUG_FOOTER === '1' && (
+        <DebugFooter user={user} activeProgram={activeProgram} loadError={loadError} viewDate={viewDate} />
+      )}
     </div>
   );
 }
@@ -309,7 +311,8 @@ function DebugFooter({ user, activeProgram, loadError, viewDate }: any) {
   const [allPrograms, setAllPrograms] = useState<any[]>([]);
 
   useEffect(() => {
-    // Raw fetch of all programs to check RLS visibility
+    // Guard: only fetch when debug footer is explicitly enabled
+    if (process.env.NEXT_PUBLIC_DEBUG_FOOTER !== '1') return;
     import("@/lib/supabase").then(({ supabase }) => {
       supabase.from('programs').select('*').then(({ data, error }) => {
         if (data) setAllPrograms(data);

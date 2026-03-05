@@ -10,14 +10,14 @@ import {
   saveActiveUserId,
   createUser,
 } from "@/lib/users";
-import { HistoryStore, loadHistoryStore, getLatest, HistoryItem } from "@/lib/results";
+import { LatestStore, loadHistoryStore, getLatest, HistoryItem } from "@/lib/results";
 import {
   Discipline,
   DisciplineRow,
   calculateDisciplineRating,
   calculateOverallRating,
 } from "@/lib/ratings";
-import { getAllCloudResults, getAllCloudProfiles } from "@/lib/cloudSync";
+import { getAllCloudProfiles, getLatestResultsForDisciplines } from "@/lib/cloudSync";
 import { useAuth } from "@/components/AuthProvider";
 
 export default function RatingsPage() {
@@ -41,59 +41,57 @@ export default function RatingsPage() {
 
   const [users, setUsers] = useState<User[]>([]);
   const [activeUserId, setActiveUserId] = useState<string>("");
-  const [store, setStore] = useState<HistoryStore>({});
+  const [store, setStore] = useState<LatestStore>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const [isCloudData, setIsCloudData] = useState(false);
   const [debug, setDebug] = useState({ profiles: 0, results: 0, lastFetch: "" });
 
   const loadData = async () => {
-    // 1. Try cloud if logged in
-    if (authUser) {
-      try {
-        const [cloudProfiles, cloudResults] = await Promise.all([
-          getAllCloudProfiles(),
-          getAllCloudResults()
-        ]);
+    // 1. Try cloud first (public access allowed via RPC)
+    try {
+      const activeDisciplines = list.filter((d: any) => d.stat !== 'flexibility');
+      const activeSlugs = activeDisciplines.map(d => d.slug);
 
-        setDebug({
-          profiles: cloudProfiles.length,
-          results: cloudResults.length,
-          lastFetch: new Date().toLocaleTimeString()
+      const [cloudProfiles, cloudResults] = await Promise.all([
+        getAllCloudProfiles(),
+        getLatestResultsForDisciplines(activeSlugs)
+      ]);
+
+      setDebug({
+        profiles: cloudProfiles.length,
+        results: cloudResults.length,
+        lastFetch: new Date().toLocaleTimeString()
+      });
+
+      if (cloudProfiles.length > 0) {
+        const mappedUsers: User[] = cloudProfiles.map(p => ({
+          id: p.id,
+          name: p.name,
+          role: p.role as any,
+          avatar: p.avatar || undefined,
+          avatarType: p.avatar_type as any
+        }));
+
+        const mappedStore: LatestStore = {};
+        cloudResults.forEach(r => {
+          // STRICT: Ignore results without user_id to prevent "ghost" data
+          if (!r.user_id) return;
+
+          if (!mappedStore[r.user_id]) mappedStore[r.user_id] = {};
+          mappedStore[r.user_id][r.discipline_slug] = {
+            ts: r.recorded_at,
+            value: Number(r.value)
+          };
         });
 
-        if (cloudProfiles.length > 0) {
-          const mappedUsers: User[] = cloudProfiles.map(p => ({
-            id: p.id,
-            name: p.name,
-            role: p.role as any,
-            avatar: p.avatar || undefined,
-            avatarType: p.avatar_type as any
-          }));
-
-          const mappedStore: HistoryStore = {};
-          cloudResults.forEach(r => {
-            // STRICT: Ignore results without user_id to prevent "ghost" data
-            if (!r.user_id) return;
-
-            if (!mappedStore[r.user_id]) mappedStore[r.user_id] = {};
-            if (!mappedStore[r.user_id][r.discipline_slug]) {
-              mappedStore[r.user_id][r.discipline_slug] = [];
-            }
-            mappedStore[r.user_id][r.discipline_slug].push({
-              ts: r.recorded_at,
-              value: Number(r.value)
-            });
-          });
-
-          setUsers(mappedUsers);
-          setStore(mappedStore);
-          setActiveUserId(authUser.id);
-          setIsCloudData(true);
-          return; // Success, exit
-        }
-      } catch (err) {
-        console.error("Cloud ratings error:", err);
+        setUsers(mappedUsers);
+        setStore(mappedStore);
+        if (authUser) setActiveUserId(authUser.id);
+        setIsCloudData(true);
+        return; // Success, exit
       }
+    } catch (err) {
+      console.error("Cloud ratings error:", err);
     }
 
     // 2. Fallback to local
@@ -111,7 +109,18 @@ export default function RatingsPage() {
     saveActiveUserId(initialActive);
 
     const s = loadHistoryStore(initialActive);
-    setStore(s);
+
+    // Fallback: convert local history to flat LatestStore
+    const convertedStore: LatestStore = {};
+    for (const uItem of u) {
+      if (s[uItem.id]) {
+        convertedStore[uItem.id] = {};
+        for (const slug in s[uItem.id]) {
+          convertedStore[uItem.id][slug] = getLatest(s[uItem.id][slug]);
+        }
+      }
+    }
+    setStore(convertedStore);
     setIsCloudData(false);
   };
 
@@ -121,16 +130,7 @@ export default function RatingsPage() {
     }
   }, [authUser, authLoading]);
 
-  const latest = useMemo(() => {
-    const out: Record<string, Record<string, HistoryItem | null>> = {};
-    for (const u of users) {
-      const uh = store[u.id] ?? {};
-      const bySlug: Record<string, HistoryItem | null> = {};
-      for (const d of list) bySlug[d.slug] = getLatest(uh[d.slug]);
-      out[u.id] = bySlug;
-    }
-    return out;
-  }, [users, store, list]);
+
 
   const { standingsBySlug, overallRows } = useMemo(() => {
     const bySlug: Record<string, DisciplineRow[]> = {};

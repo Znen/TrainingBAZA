@@ -4,6 +4,9 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 
+// Module-scope guard: sync runs at most once per user_id per page lifetime
+const syncedUserIds = new Set<string>();
+
 interface AuthContextType {
     user: User | null;
     session: Session | null;
@@ -29,16 +32,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setSession(session);
             setUser(session?.user ?? null);
             setLoading(false);
-            if (session?.user) triggerAutoSync(session.user);
+            // Fire-and-forget: don't block UI
+            if (session?.user) {
+                void triggerAutoSync(session.user).catch(console.error);
+            }
         });
 
         // Listen for auth changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            (_event, session) => {
+            (event, session) => {
                 setSession(session);
                 setUser(session?.user ?? null);
                 setLoading(false);
-                if (session?.user) triggerAutoSync(session.user);
+                // Only sync on actual sign-in, NOT on token refresh
+                if (session?.user && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+                    void triggerAutoSync(session.user).catch(console.error);
+                }
             }
         );
 
@@ -47,6 +56,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Helper: Auto-sync local data to cloud on login
     const triggerAutoSync = async (user: User) => {
+        // Kill-switch via env
+        if (process.env.NEXT_PUBLIC_DISABLE_AUTOSYNC === '1') return;
+
+        // Once-per-user guard (module-scope Set survives re-renders)
+        if (syncedUserIds.has(user.id)) return;
+        syncedUserIds.add(user.id);
+
         try {
             // 1. Try new format first
             let historyJson = localStorage.getItem("trainingBaza:history:v2");

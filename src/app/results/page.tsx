@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import disciplines from "../../../disciplines.json";
 import {
   User,
@@ -22,18 +22,22 @@ import {
   formatUtc,
 } from "@/lib/results";
 import {
-  getCloudResults,
-  getAllCloudResults,
+  getLatestResults,
+  getResultsHistory,
+  addCloudResult,
   getCloudProfile,
   getAllCloudProfiles,
   CloudResult,
-  type CloudProfile
+  type CloudProfile,
 } from "@/lib/cloudSync";
 import {
   parseTimeToSeconds,
   formatSecondsToTime,
   shouldUseTimeInput,
 } from "@/lib/timeUtils";
+import { useAuth } from "@/components/AuthProvider";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { MobilityInfoSection } from "@/components/MobilityInfo";
 
 type Discipline = {
   slug: string;
@@ -46,11 +50,6 @@ type Discipline = {
   icon?: string;
   retired?: boolean;
 };
-
-import { addCloudResult } from "@/lib/cloudSync";
-import { useAuth } from "@/components/AuthProvider";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
-import { MobilityInfoSection } from "@/components/MobilityInfo";
 
 export default function ResultsPage() {
   return (
@@ -70,7 +69,6 @@ function ResultsContent() {
     }, {});
   }, [list]);
 
-  // Фиксированный порядок категорий (Подвижность убрана — теперь информационный блок)
   const CATEGORY_ORDER = ["Сила", "Статика", "Навыки", "Выносливость", "Бег"];
 
   const categories = useMemo(
@@ -82,9 +80,19 @@ function ResultsContent() {
   const [activeUserId, setActiveUserId] = useState<string>("");
   const [targetUserId, setTargetUserId] = useState<string>("");
 
-  const [store, setStore] = useState<HistoryStore>({});
+  // Latest result per discipline for the target user (from v_latest_results view)
+  const [latestBySlug, setLatestBySlug] = useState<Record<string, CloudResult>>({});
   const [values, setValues] = useState<Record<string, string>>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  // History drill-down state
+  const [historySlug, setHistorySlug] = useState<string | null>(null);
+  const [historyItems, setHistoryItems] = useState<CloudResult[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyHasMore, setHistoryHasMore] = useState(false);
+
+  // For localStorage fallback (guests)
+  const [store, setStore] = useState<HistoryStore>({});
 
   const { user: authUser, loading: authLoading } = useAuth();
 
@@ -93,22 +101,18 @@ function ResultsContent() {
   const isCurrentUserAdmin = isAdmin(activeUser);
   const canAddResults = canAddResultsFor(activeUser, targetUserId);
 
-  const history: HistoryBySlug = store[targetUserId] ?? {};
+  // Guest fallback history
+  const guestHistory: HistoryBySlug = store[targetUserId] ?? {};
 
+  // --- Effect 1: Load users & profiles ---
   useEffect(() => {
     let u = loadUsers();
 
-    // Если мы авторизованы, убеждаемся, что пользователь есть в списке
     if (authUser && !authLoading) {
       getCloudProfile(authUser.id).then(async (profile) => {
         let currentList = loadUsers();
-
-        // 1. Update current user in list
         const role = (profile?.role === 'admin') ? 'admin' : 'user';
         const name = profile?.name || authUser.user_metadata?.name || "Пользователь";
-
-        // Remove duplicates of current authUser if any existed incorrectly
-        // currentList = currentList.filter(u => u.id !== authUser.id);
 
         let currentUser = currentList.find(x => x.id === authUser.id);
         if (currentUser) {
@@ -126,7 +130,6 @@ function ResultsContent() {
           currentList.push(currentUser);
         }
 
-        // 2. If Admin, fetch ALL profiles
         if (role === 'admin') {
           try {
             const allProfiles = await getAllCloudProfiles();
@@ -141,7 +144,6 @@ function ResultsContent() {
                   measurements: []
                 });
               } else {
-                // Sync details
                 existing.name = p.name;
                 existing.role = p.role as any;
               }
@@ -151,7 +153,6 @@ function ResultsContent() {
           }
         }
 
-        // 3. Deduplicate invalid entries (fallback)
         const uniqueMap = new Map();
         currentList.forEach(u => uniqueMap.set(u.id, u));
         const dedupedList = Array.from(uniqueMap.values());
@@ -166,8 +167,6 @@ function ResultsContent() {
     setUsers(u);
 
     const savedActive = loadActiveUserId();
-    // Если есть авторизованный пользователь, приоритет ему
-    // Если есть авторизованный пользователь, приоритет ему
     const initialActive =
       authUser ? authUser.id :
         (savedActive && u.some((x) => x.id === savedActive) ? savedActive : u[0].id);
@@ -175,66 +174,116 @@ function ResultsContent() {
     setActiveUserId(initialActive);
     setTargetUserId(initialActive);
     saveActiveUserId(initialActive);
-  }, [authUser, authLoading]);
+  }, [authUser?.id, authLoading]); // Use stable string id, not object ref
 
-  // Load Data Effect (Cloud-first, localStorage only as fallback for guests)
+  // --- Effect 2: Load latest results (1 row per discipline) ---
   useEffect(() => {
-    const loadToStore = async () => {
-      // If authenticated — use CLOUD as source of truth, do NOT touch localStorage
-      if (authUser) {
-        const cloudStore: HistoryStore = {};
-        try {
-          // If admin - fetch all athletes data, if user - only their own
-          const cloudResults = isCurrentUserAdmin
-            ? await getAllCloudResults()
-            : await getCloudResults(authUser.id);
-
-          cloudResults.forEach((r: CloudResult) => {
-            if (!r.user_id) return; // skip orphan records
-            if (!cloudStore[r.user_id]) cloudStore[r.user_id] = {};
-            if (!cloudStore[r.user_id][r.discipline_slug]) {
-              cloudStore[r.user_id][r.discipline_slug] = [];
-            }
-            cloudStore[r.user_id][r.discipline_slug].push({
-              ts: r.recorded_at,
-              value: Number(r.value),
-            });
-          });
-        } catch (err) {
-          console.error("Failed to load cloud results in Results:", err);
-        }
-        // STRICT: Use cloud data only, do NOT save to localStorage
-        setStore(cloudStore);
-        return;
-      }
-
-      // Fallback for guests: load from localStorage
+    if (!authUser) {
+      // Guest fallback
       const currentStore = loadHistoryStore(activeUserId || "guest");
       setStore(currentStore);
-    };
+      return;
+    }
 
-    loadToStore();
-  }, [authUser, isCurrentUserAdmin]); // Reload if auth OR role changes
+    const fetchUserId = targetUserId || authUser.id;
+    if (!fetchUserId) return;
 
-  // Update form values when Store OR TargetUser changes
+    getLatestResults(fetchUserId)
+      .then((results) => {
+        const bySlug: Record<string, CloudResult> = {};
+        results.forEach((r) => {
+          if (r.user_id && r.discipline_slug) {
+            bySlug[r.discipline_slug] = r;
+          }
+        });
+        setLatestBySlug(bySlug);
+      })
+      .catch((err) => console.error("Failed to load latest results:", err));
+
+    // Close history panel when target user changes
+    setHistorySlug(null);
+    setHistoryItems([]);
+  }, [authUser?.id, targetUserId]); // Stable deps: only refetch on real user/target change
+
+  // --- Effect 3: Sync form values from latest results ---
   useEffect(() => {
-    if (!targetUserId) return;
-
-    const h = store[targetUserId] ?? {};
     const nextValues: Record<string, string> = {};
-    for (const d of list) {
-      const last = getLatest(h[d.slug]);
-      if (last) {
-        if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
-          nextValues[d.slug] = formatSecondsToTime(last.value);
-        } else {
-          nextValues[d.slug] = String(last.value);
+
+    if (authUser) {
+      // Cloud mode: use latestBySlug
+      for (const d of list) {
+        const r = latestBySlug[d.slug];
+        if (r) {
+          if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
+            nextValues[d.slug] = formatSecondsToTime(Number(r.value));
+          } else {
+            nextValues[d.slug] = String(r.value);
+          }
+        }
+      }
+    } else {
+      // Guest: use localStorage
+      const h = guestHistory;
+      for (const d of list) {
+        const last = getLatest(h[d.slug]);
+        if (last) {
+          if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
+            nextValues[d.slug] = formatSecondsToTime(last.value);
+          } else {
+            nextValues[d.slug] = String(last.value);
+          }
         }
       }
     }
-    setValues(nextValues);
-  }, [targetUserId, store, list]);
 
+    setValues(nextValues);
+  }, [latestBySlug, store, targetUserId, list, authUser]);
+
+  // --- History drill-down ---
+  const openHistory = useCallback(async (slug: string) => {
+    if (!authUser) return; // history only for cloud users
+    const fetchUserId = targetUserId || authUser.id;
+
+    if (historySlug === slug) {
+      // Toggle off
+      setHistorySlug(null);
+      setHistoryItems([]);
+      return;
+    }
+
+    setHistorySlug(slug);
+    setHistoryLoading(true);
+    setHistoryItems([]);
+
+    try {
+      const items = await getResultsHistory(fetchUserId, slug, 50);
+      setHistoryItems(items);
+      setHistoryHasMore(items.length === 50);
+    } catch (err) {
+      console.error("Failed to load history:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [authUser, targetUserId, historySlug]);
+
+  const loadMoreHistory = useCallback(async () => {
+    if (!authUser || !historySlug || historyItems.length === 0) return;
+    const fetchUserId = targetUserId || authUser.id;
+    const lastItem = historyItems[historyItems.length - 1];
+
+    setHistoryLoading(true);
+    try {
+      const items = await getResultsHistory(fetchUserId, historySlug, 50, lastItem.recorded_at);
+      setHistoryItems(prev => [...prev, ...items]);
+      setHistoryHasMore(items.length === 50);
+    } catch (err) {
+      console.error("Failed to load more history:", err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  }, [authUser, targetUserId, historySlug, historyItems]);
+
+  // --- Commit value ---
   const commitValue = (slug: string, rawValue: string) => {
     if (!canAddResults) return;
 
@@ -246,7 +295,6 @@ function ResultsContent() {
     if (shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better")) {
       numericValue = parseTimeToSeconds(rawValue);
     } else {
-      // Заменяем запятую на точку для русской локали
       const normalizedValue = rawValue.replace(",", ".");
       const parsed = parseFloat(normalizedValue);
       if (!isNaN(parsed)) {
@@ -256,31 +304,63 @@ function ResultsContent() {
 
     if (numericValue === null) return;
 
-    // 1. Update Local
-    setStore((prev) => {
-      const next = addResult(prev, targetUserId, slug, numericValue as number);
-      saveHistoryStore(next);
-      return next;
-    });
+    if (authUser) {
+      // Cloud mode: update optimistically then sync
+      const now = new Date().toISOString();
 
-    // 2. Update Cloud if enabled
-    if (authUser && (targetUserId === authUser.id || isCurrentUserAdmin)) {
+      // Optimistic update of latestBySlug
+      setLatestBySlug(prev => ({
+        ...prev,
+        [slug]: {
+          user_id: targetUserId,
+          discipline_slug: slug,
+          value: numericValue as number,
+          recorded_at: now,
+        }
+      }));
+
+      // If history panel is open for this slug, prepend
+      if (historySlug === slug) {
+        setHistoryItems(prev => [{
+          user_id: targetUserId,
+          discipline_slug: slug,
+          value: numericValue as number,
+          recorded_at: now,
+        }, ...prev]);
+      }
+
+      // Cloud sync
       addCloudResult({
         user_id: targetUserId,
         discipline_slug: slug,
         value: numericValue as number,
-        recorded_at: new Date().toISOString()
+        recorded_at: now,
       }).catch(err => console.error("Cloud sync failed:", err));
+    } else {
+      // Guest: localStorage
+      setStore((prev) => {
+        const next = addResult(prev, targetUserId, slug, numericValue as number);
+        saveHistoryStore(next);
+        return next;
+      });
     }
   };
 
   const switchTargetUser = (id: string) => {
-    // Safeguard: non-admins can only view/edit themselves
     if (!isCurrentUserAdmin && authUser && id !== authUser.id) {
       console.warn("Unauthorized attempt to switch user");
       return;
     }
     setTargetUserId(id);
+  };
+
+  // --- Helper for getting latest value ---
+  const getLatestForSlug = (slug: string) => {
+    if (authUser) {
+      const r = latestBySlug[slug];
+      return r ? { ts: r.recorded_at, value: Number(r.value) } : null;
+    }
+    return getLatest(guestHistory[slug]);
   };
 
   return (
@@ -297,7 +377,6 @@ function ResultsContent() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          {/* Селектор пользователя — только для админа */}
           {isCurrentUserAdmin ? (
             <div className="flex items-center gap-2">
               <span className="text-sm text-[var(--text-secondary)]">Атлет:</span>
@@ -322,7 +401,7 @@ function ResultsContent() {
         </div>
       </div>
 
-      {/* Уведомление о режиме */}
+      {/* Admin warning */}
       {isCurrentUserAdmin && targetUserId !== activeUserId && (
         <div className="card p-3 mb-6 border-[var(--accent-warning)] bg-[var(--accent-warning)]/10">
           <p className="text-sm text-[var(--accent-warning)]">
@@ -331,7 +410,7 @@ function ResultsContent() {
         </div>
       )}
 
-      {/* Категории дисциплин */}
+      {/* Categories */}
       <div className="grid gap-6">
         {categories.map((category) => (
           <section key={category} className="card">
@@ -359,52 +438,103 @@ function ResultsContent() {
             {expandedCategories.has(category) && (
               <div className="discipline-list">
                 {grouped[category].map((d) => {
-                  const h = history[d.slug] ?? [];
-                  const last = getLatest(h);
+                  const last = getLatestForSlug(d.slug);
                   const isTimeInput = shouldUseTimeInput(d.unit ?? "", d.direction ?? "higher_better");
+                  const isHistoryOpen = historySlug === d.slug;
 
                   return (
-                    <div key={d.slug} className="discipline-row">
-                      <span className="discipline-icon shrink-0">{d.icon ?? "📌"}</span>
+                    <div key={d.slug}>
+                      <div className="discipline-row">
+                        <span className="discipline-icon shrink-0">{d.icon ?? "📌"}</span>
 
-                      <div className="discipline-info min-w-0 pr-2 flex-1">
-                        <div className="discipline-name leading-snug mb-0.5 text-sm font-medium text-white">{d.name}</div>
-                        <div className="discipline-value text-[10px] text-zinc-500">
-                          {last ? (
-                            <div className="flex flex-wrap gap-x-2">
-                              <span className="text-zinc-300">
-                                {isTimeInput
-                                  ? formatSecondsToTime(last.value)
-                                  : `${last.value} ${d.unit ?? ""}`}
+                        <div
+                          className="discipline-info min-w-0 pr-2 flex-1 cursor-pointer"
+                          onClick={() => openHistory(d.slug)}
+                          title="Нажмите для истории"
+                        >
+                          <div className="discipline-name leading-snug mb-0.5 text-sm font-medium text-white flex items-center gap-1.5">
+                            {d.name}
+                            {authUser && (
+                              <span className={`text-[9px] transition-transform ${isHistoryOpen ? 'rotate-90' : ''}`}>
+                                ▶
                               </span>
-                              <span className="opacity-40">• {formatUtc(last.ts)}</span>
-                            </div>
-                          ) : (
-                            <span className="italic opacity-50">Нет данных</span>
+                            )}
+                          </div>
+                          <div className="discipline-value text-[10px] text-zinc-500">
+                            {last ? (
+                              <div className="flex flex-wrap gap-x-2">
+                                <span className="text-zinc-300">
+                                  {isTimeInput
+                                    ? formatSecondsToTime(last.value)
+                                    : `${last.value} ${d.unit ?? ""}`}
+                                </span>
+                                <span className="opacity-40">• {formatUtc(last.ts)}</span>
+                              </div>
+                            ) : (
+                              <span className="italic opacity-50">Нет данных</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <input
+                            className={`input input-sm text-center font-mono ${isTimeInput ? 'w-24' : 'w-20'}`}
+                            type="text"
+                            inputMode={isTimeInput ? "text" : "decimal"}
+                            placeholder={isTimeInput ? "ММ:СС" : "0"}
+                            value={values[d.slug] ?? ""}
+                            onChange={(e) => setValues((prev) => ({ ...prev, [d.slug]: e.target.value }))}
+                            onBlur={(e) => commitValue(d.slug, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") e.currentTarget.blur();
+                            }}
+                            disabled={!canAddResults}
+                          />
+                          {!isTimeInput && d.unit && (
+                            <span className="text-[10px] text-zinc-500 font-mono w-4 text-left">
+                              {d.unit}
+                            </span>
                           )}
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        <input
-                          className={`input input-sm text-center font-mono ${isTimeInput ? 'w-24' : 'w-20'}`}
-                          type="text"
-                          inputMode={isTimeInput ? "text" : "decimal"}
-                          placeholder={isTimeInput ? "ММ:СС" : "0"}
-                          value={values[d.slug] ?? ""}
-                          onChange={(e) => setValues((prev) => ({ ...prev, [d.slug]: e.target.value }))}
-                          onBlur={(e) => commitValue(d.slug, e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") e.currentTarget.blur();
-                          }}
-                          disabled={!canAddResults}
-                        />
-                        {!isTimeInput && d.unit && (
-                          <span className="text-[10px] text-zinc-500 font-mono w-4 text-left">
-                            {d.unit}
-                          </span>
-                        )}
-                      </div>
+                      {/* History Panel (click-to-expand) */}
+                      {isHistoryOpen && (
+                        <div className="px-4 pb-3 pt-1 bg-zinc-900/30 border-t border-white/5">
+                          <div className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest mb-2">
+                            История: {d.name}
+                          </div>
+
+                          {historyLoading && historyItems.length === 0 ? (
+                            <div className="text-[10px] text-zinc-600 py-2 text-center">Загрузка...</div>
+                          ) : historyItems.length === 0 ? (
+                            <div className="text-[10px] text-zinc-600 py-2 text-center">Нет записей</div>
+                          ) : (
+                            <div className="space-y-1">
+                              {historyItems.map((item, idx) => (
+                                <div key={item.id || idx} className="flex justify-between items-center text-[10px] font-mono py-1 border-b border-white/5 last:border-0">
+                                  <span className="text-zinc-300">
+                                    {isTimeInput
+                                      ? formatSecondsToTime(Number(item.value))
+                                      : `${item.value} ${d.unit ?? ""}`}
+                                  </span>
+                                  <span className="text-zinc-600">{formatUtc(item.recorded_at)}</span>
+                                </div>
+                              ))}
+
+                              {historyHasMore && (
+                                <button
+                                  onClick={loadMoreHistory}
+                                  disabled={historyLoading}
+                                  className="w-full text-[10px] font-mono text-zinc-500 hover:text-white py-2 uppercase tracking-widest transition-colors disabled:opacity-50"
+                                >
+                                  {historyLoading ? "Загрузка..." : "[ Показать ещё ]"}
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -414,10 +544,10 @@ function ResultsContent() {
         ))}
       </div>
 
-      {/* Подвижность — информационные тесты */}
+      {/* Mobility info */}
       <MobilityInfoSection />
 
-      {/* Подсказка для обычных пользователей */}
+      {/* Hint for regular users */}
       {!isCurrentUserAdmin && (
         <div className="mt-6 text-center text-sm text-[var(--text-muted)]">
           💡 Вы можете редактировать только свои результаты

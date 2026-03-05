@@ -19,7 +19,7 @@ import {
   type User,
   type BodyMeasurement,
 } from "@/lib/users";
-import { loadHistoryStore, saveHistoryStore, type HistoryBySlug, type HistoryStore, type HistoryItem } from "@/lib/results";
+import { loadHistoryStore, saveHistoryStore, getLatest, type HistoryBySlug, type HistoryStore, type HistoryItem, type LatestBySlug } from "@/lib/results";
 import {
   getUserStats,
   getOverallLevel,
@@ -33,8 +33,7 @@ import {
   updateCloudProfile,
   addCloudMeasurement,
   getCloudMeasurements,
-  getAllCloudResults,
-  getCloudResults,
+  getLatestResults,
   type CloudProfile,
   type CloudResult,
   type CloudMeasurement
@@ -318,7 +317,7 @@ function AccountContent() {
 
           // Sync Results
           addLog("Fetching history...");
-          const cloudResults = await withTimeout(getCloudResults(authUser.id), 20000); // 20s for large history
+          const cloudResults = await withTimeout(getLatestResults(authUser.id), 8000); // Only fetches latest 1 entry per discipline
           addLog(`History synced: ${cloudResults?.length || 0} entries`);
 
           if (cloudResults && cloudResults.length > 0) {
@@ -349,29 +348,8 @@ function AccountContent() {
             });
           }
 
-          // Local -> Cloud Migration (Results)
-          const localToCloudResults = [];
-          if (currentStore[authUser.id]) {
-            for (const slug in currentStore[authUser.id]) {
-              for (const item of currentStore[authUser.id][slug]) {
-                const inCloud = cloudResults?.some((cr: CloudResult) => cr.recorded_at === item.ts && cr.discipline_slug === slug);
-                if (!inCloud) {
-                  localToCloudResults.push({
-                    user_id: authUser.id,
-                    discipline_slug: slug,
-                    value: item.value,
-                    recorded_at: item.ts
-                  });
-                }
-              }
-            }
-          }
-
-          if (localToCloudResults.length > 0) {
-            addLog(`Pushing ${localToCloudResults.length} records...`);
-            await withTimeout(supabase.from('results').insert(localToCloudResults) as any, 20000);
-            addLog("Records pushed: OK");
-          }
+          // Removed local -> cloud history sync here because we no longer fetch full history to diff against.
+          // Individual history changes are synced immediately on /results.
 
           addLog("All data synced successfully.");
         } catch (e: any) {
@@ -419,12 +397,20 @@ function AccountContent() {
   const latestMeasurements = activeUser ? getLatestMeasurements(activeUser) : null;
   const measurementHistory = activeUser ? getMeasurementHistory(activeUser, 5) : [];
 
+  const latestBySlug = useMemo(() => {
+    const out: LatestBySlug = {};
+    for (const d of list) {
+      out[d.slug] = getLatest(history[d.slug]);
+    }
+    return out;
+  }, [history, list]);
+
   // Stats
   const latestWeight = latestMeasurements?.weight;
-  const stats = useMemo(() => getUserStats(list, history, latestWeight), [list, history, latestWeight]);
+  const stats = useMemo(() => getUserStats(list, latestBySlug, latestWeight), [list, latestBySlug, latestWeight]);
   const overallLevel = useMemo(() => getOverallLevel(stats), [stats]);
   const rank = useMemo(() => getRankTitle(overallLevel), [overallLevel]);
-  const achievements = useMemo(() => getDisciplineAchievements(list, history, latestWeight), [list, history, latestWeight]);
+  const achievements = useMemo(() => getDisciplineAchievements(list, latestBySlug, latestWeight), [list, latestBySlug, latestWeight]);
 
   // Force sync activeUserId with Auth User
   useEffect(() => {

@@ -3,7 +3,7 @@
  * Использует нормативы тренера для определения уровня
  */
 
-import type { HistoryBySlug } from './results';
+import type { LatestBySlug } from './results';
 import standardsData from '../../standards.json';
 
 export type StatType = 'strength' | 'endurance' | 'agility' | 'flexibility';
@@ -90,16 +90,7 @@ export const STATS: Record<StatType, StatInfo> = {
     }
 };
 
-/**
- * Получить последний результат из истории
- */
-function getLatestValue(items: { ts: string; value: number }[] | undefined): number | null {
-    if (!items || items.length === 0) return null;
-    const sorted = [...items].sort((a, b) =>
-        new Date(b.ts).getTime() - new Date(a.ts).getTime()
-    );
-    return sorted[0].value;
-}
+
 
 /**
  * Определить уровень норматива для значения
@@ -194,7 +185,7 @@ export function getStandardLevel(
 export function calculateStatLevel(
     stat: StatType,
     disciplines: Discipline[],
-    history: HistoryBySlug,
+    latest: LatestBySlug,
     userWeight?: number
 ): StatLevel {
     const statInfo = STATS[stat];
@@ -216,7 +207,7 @@ export function calculateStatLevel(
     let count = 0;
 
     for (const d of relevantDisciplines) {
-        const value = getLatestValue(history[d.slug]);
+        const value = latest[d.slug]?.value ?? null;
         if (value !== null) {
             const { points } = getStandardLevel(d.slug, value, userWeight);
             totalPoints += points;
@@ -248,13 +239,13 @@ const RETIRED_STATS: StatType[] = ['flexibility'];
  */
 export function getUserStats(
     disciplines: Discipline[],
-    history: HistoryBySlug,
+    latest: LatestBySlug,
     userWeight?: number
 ): StatLevel[] {
     const statTypes: StatType[] = ['strength', 'endurance', 'agility', 'flexibility'];
     return statTypes
         .filter(s => !RETIRED_STATS.includes(s))
-        .map(stat => calculateStatLevel(stat, disciplines, history, userWeight));
+        .map(stat => calculateStatLevel(stat, disciplines, latest, userWeight));
 }
 
 /**
@@ -289,7 +280,7 @@ export function getRankTitle(level: number): { title: string; titleRu: string; c
  */
 export function getDisciplineAchievements(
     disciplines: Discipline[],
-    history: HistoryBySlug,
+    latest: LatestBySlug,
     userWeight?: number
 ): Array<{
     discipline: Discipline;
@@ -302,12 +293,8 @@ export function getDisciplineAchievements(
 }> {
     const activeDisciplines = disciplines.filter(d => !RETIRED_STATS.includes(d.stat));
     return activeDisciplines.map(d => {
-        // Find latest item
-        const items = history[d.slug];
-        let latestItem = null;
-        if (items && items.length > 0) {
-            latestItem = [...items].sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime())[0];
-        }
+        // Use pre-computed latest item
+        const latestItem = latest[d.slug] ?? null;
 
         if (!latestItem) {
             return {

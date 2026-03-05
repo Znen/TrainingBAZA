@@ -4,6 +4,45 @@
 
 import { supabase } from './supabase';
 
+// === IN-FLIGHT DEDUPE + SHORT TTL CACHE ===
+// Prevents duplicate requests from StrictMode double-mounts and auth event bursts.
+
+const inflight = new Map<string, Promise<any>>();
+const cache = new Map<string, { data: any; ts: number }>();
+const CACHE_TTL_MS = 3000; // 3 seconds
+
+function deduped<T>(key: string, fn: () => Promise<T>): Promise<T> {
+    // 1. Check TTL cache
+    const cached = cache.get(key);
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+        return Promise.resolve(cached.data as T);
+    }
+
+    // 2. Check in-flight
+    const existing = inflight.get(key);
+    if (existing) return existing as Promise<T>;
+
+    // 3. Execute and track
+    const promise = fn()
+        .then((result) => {
+            cache.set(key, { data: result, ts: Date.now() });
+            return result;
+        })
+        .finally(() => {
+            inflight.delete(key);
+        });
+
+    inflight.set(key, promise);
+    return promise;
+}
+
+/** Invalidate cache for a specific key prefix (e.g. after writes) */
+export function invalidateCache(prefix: string) {
+    for (const key of cache.keys()) {
+        if (key.startsWith(prefix)) cache.delete(key);
+    }
+}
+
 // === PROFILES ===
 
 export interface CloudProfile {
@@ -14,18 +53,20 @@ export interface CloudProfile {
     role: string;
 }
 
-export async function getCloudProfile(userId: string): Promise<CloudProfile | null> {
-    const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+export function getCloudProfile(userId: string): Promise<CloudProfile | null> {
+    return deduped(`profile:${userId}`, async () => {
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id, name, avatar, avatar_type, role')
+            .eq('id', userId)
+            .single();
 
-    if (error) {
-        console.error('Error fetching profile:', error);
-        return null;
-    }
-    return data;
+        if (error) {
+            console.error('Error fetching profile:', error);
+            return null;
+        }
+        return data;
+    });
 }
 
 export async function updateCloudProfile(userId: string, updates: Partial<CloudProfile>) {
@@ -67,71 +108,91 @@ export interface CloudResult {
     recorded_at: string;
 }
 
-export async function getCloudResults(userId: string): Promise<CloudResult[]> {
-    let allData: CloudResult[] = [];
-    let page = 0;
-    const pageSize = 1000;
-
-    while (true) {
+/**
+ * Fetch LATEST result per discipline for a given user.
+ * Uses the v_latest_results view (DISTINCT ON user_id, discipline_slug).
+ * Returns 1 row per discipline — ideal for the main /results list.
+ */
+export function getLatestResults(userId: string): Promise<CloudResult[]> {
+    return deduped(`latest:${userId}`, async () => {
         const { data, error } = await supabase
-            .from('results')
-            .select('*')
-            .eq('user_id', userId)
-            .order('recorded_at', { ascending: false })
-            .range(page * pageSize, (page + 1) * pageSize - 1);
+            .from('v_latest_results')
+            .select('user_id, discipline_slug, value, recorded_at')
+            .eq('user_id', userId);
 
         if (error) {
-            console.error('Error fetching results:', error);
-            break;
+            console.error('Error fetching latest results:', error);
+            return [];
         }
-
-        if (!data || data.length === 0) {
-            break;
-        }
-
-        allData = [...allData, ...data];
-
-        if (data.length < pageSize) {
-            break; // Последняя страница
-        }
-
-        page++;
-    }
-
-    return allData;
+        return data || [];
+    });
 }
 
-export async function getAllCloudResults(): Promise<CloudResult[]> {
-    let allData: CloudResult[] = [];
-    let page = 0;
-    const pageSize = 1000;
+/**
+ * Fetch history for a specific discipline with cursor-based pagination.
+ * Returns `limit` rows ordered by recorded_at DESC.
+ * Pass cursor (recorded_at of last item) to load the next page.
+ */
+export async function getResultsHistory(
+    userId: string,
+    disciplineSlug: string,
+    limit: number = 50,
+    cursor?: string // recorded_at of the last loaded item
+): Promise<CloudResult[]> {
+    let query = supabase
+        .from('results')
+        .select('id, user_id, discipline_slug, value, recorded_at')
+        .eq('user_id', userId)
+        .eq('discipline_slug', disciplineSlug)
+        .order('recorded_at', { ascending: false })
+        .limit(limit);
 
-    while (true) {
-        const { data, error } = await supabase
-            .from('results')
-            .select('*')
-            .order('recorded_at', { ascending: false })
-            .range(page * pageSize, (page + 1) * pageSize - 1);
-
-        if (error) {
-            console.error('Error fetching all results:', error);
-            break;
-        }
-
-        if (!data || data.length === 0) {
-            break;
-        }
-
-        allData = [...allData, ...data];
-
-        if (data.length < pageSize) {
-            break;
-        }
-
-        page++;
+    if (cursor) {
+        query = query.lt('recorded_at', cursor);
     }
 
-    return allData;
+    const { data, error } = await query;
+
+    if (error) {
+        console.error('Error fetching results history:', error);
+        return [];
+    }
+    return data || [];
+}
+
+export async function getCloudResults(userId: string): Promise<CloudResult[]> {
+    const { data, error } = await supabase
+        .from('results')
+        .select('user_id, discipline_slug, value, recorded_at')
+        .eq('user_id', userId)
+        .order('recorded_at', { ascending: false })
+        .limit(1000);
+
+    if (error) {
+        console.error('Error fetching results:', error);
+        return [];
+    }
+    return data || [];
+}
+
+/**
+ * Fetch latest results across all users, but ONLY for specific disciplines.
+ * Used by /ratings to avoid downloading massive history arrays.
+ */
+export function getLatestResultsForDisciplines(disciplineSlugs: string[]): Promise<CloudResult[]> {
+    const keySlugs = [...disciplineSlugs].sort();
+    return deduped(`latest-disciplines:${keySlugs.join(',')}`, async () => {
+        if (disciplineSlugs.length === 0) return [];
+
+        const { data, error } = await supabase
+            .rpc('get_latest_results_for_disciplines', { slugs: disciplineSlugs });
+
+        if (error) {
+            console.error('Error fetching latest results for disciplines:', error);
+            return [];
+        }
+        return data || [];
+    });
 }
 
 export async function addCloudResult(result: Omit<CloudResult, 'id'>): Promise<CloudResult | null> {
@@ -145,6 +206,8 @@ export async function addCloudResult(result: Omit<CloudResult, 'id'>): Promise<C
         console.error('Error adding result:', error);
         return null;
     }
+    // Invalidate latest-results cache for this user so next fetch is fresh
+    invalidateCache(`latest:${result.user_id}`);
     return data;
 }
 
@@ -220,7 +283,9 @@ export async function getLatestCloudMeasurements(userId: string): Promise<Record
 export async function getAllCloudProfiles(): Promise<CloudProfile[]> {
     const { data, error } = await supabase
         .from('profiles')
-        .select('*');
+        .select('id, name, avatar, avatar_type, role')
+        .order('name', { ascending: true })
+        .limit(200);
 
     if (error) {
         console.error('Error fetching all profiles:', error);
