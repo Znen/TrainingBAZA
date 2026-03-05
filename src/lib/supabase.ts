@@ -1,13 +1,30 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+let _supabase: SupabaseClient | null = null;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("CRITICAL: Supabase environment variables are missing!");
+function getSupabase(): SupabaseClient {
+    if (_supabase) return _supabase;
+
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!url || !key) {
+        // During next build's static prerender, env may be absent.
+        // Return a no-op client that will silently fail — real requests happen at runtime only.
+        console.warn('Supabase env vars missing – using placeholder client (build-time prerender only).');
+        return createClient('https://placeholder.supabase.co', 'placeholder-key');
+    }
+
+    _supabase = createClient(url, key);
+    return _supabase;
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Proxy that lazily resolves the real (or placeholder) client on first property access.
+export const supabase = new Proxy({} as SupabaseClient, {
+    get(_target, prop) {
+        return (getSupabase() as any)[prop];
+    },
+});
 
 // Auth helpers
 export async function signUp(email: string, password: string, name: string) {
