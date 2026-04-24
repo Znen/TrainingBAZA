@@ -161,49 +161,59 @@ export default function RatingsPage() {
         <h1 className="text-3xl font-black italic uppercase text-white leading-none mb-2">
           Зал <span className="text-[var(--accent-primary)]">Славы</span>
         </h1>
-        <p className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] border-l border-zinc-800 pl-3">
-          Глобальный рейтинг атлетов {isCloudData && "(Облако подключено)"}
+        <p className="text-xs font-mono text-zinc-500 uppercase tracking-widest border-l-2 border-zinc-800 pl-3">
+          Глобальный рейтинг · {users.length} участников
+          {isCloudData && <span className="text-green-600 ml-2">● облако</span>}
         </p>
       </div>
 
       {/* Общий рейтинг */}
-      <section className="mb-10 bg-zinc-900/30 border border-white/5 overflow-hidden">
-        <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center bg-white/5">
-          <h2 className="text-xs font-black uppercase italic tracking-widest text-zinc-400">Общий рейтинг</h2>
-          <span className="text-[10px] font-mono text-zinc-600 uppercase">{users.length} участников</span>
+      <section className="mb-10 overflow-hidden rounded-xl border border-white/6 bg-[#141414]">
+        <div className="px-4 py-3 border-b border-white/5 flex justify-between items-center">
+          <h2 className="text-xs font-black uppercase italic tracking-widest text-zinc-300">Общий рейтинг</h2>
         </div>
 
-        <div className="table-wrapper">
-          <table className="table">
-            <thead>
-              <tr>
-                <th className="w-16">Место</th>
-                <th>Участник</th>
-                <th className="text-right">Очки</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overallRows.map((row) => (
-                <tr
-                  key={row.userId}
-                  className={`${row.userId === activeUserId ? "bg-[var(--accent-primary)]/5" : ""} border-b border-white/5 last:border-0`}
-                >
-                  <td className="font-medium">
-                    {row.place > 0 ? (
-                      <>
-                        {row.place === 1 && "🥇"}
-                        {row.place === 2 && "🥈"}
-                        {row.place === 3 && "🥉"}
-                        {row.place > 3 && `#${row.place}`}
-                      </>
-                    ) : "—"}
-                  </td>
-                  <td>{row.userName}</td>
-                  <td className="text-right font-mono">{row.points || 0}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div>
+          {overallRows.map((row, idx) => {
+            const isMe = row.userId === activeUserId;
+            const medals = ["🥇", "🥈", "🥉"];
+            const isTop3 = row.place >= 1 && row.place <= 3;
+
+            return (
+              <div
+                key={row.userId}
+                className={`flex items-center gap-3 px-4 py-3 border-b border-white/5 last:border-0 transition-colors
+                  ${isMe ? "bg-yellow-500/6" : isTop3 ? "bg-white/2" : ""}
+                `}
+              >
+                <div className={`w-8 text-center font-mono font-bold text-sm shrink-0
+                  ${row.place === 1 ? "text-yellow-400" : row.place === 2 ? "text-zinc-300" : row.place === 3 ? "text-amber-600" : "text-zinc-600"}
+                `}>
+                  {isTop3 ? medals[row.place - 1] : `#${row.place}`}
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <span className={`text-sm font-medium truncate ${isMe ? "text-yellow-300" : "text-zinc-200"}`}>
+                    {row.userName}
+                    {isMe && <span className="ml-1.5 text-[10px] text-yellow-600 font-mono uppercase tracking-wider">вы</span>}
+                  </span>
+                </div>
+
+                <div className={`font-mono text-sm font-bold shrink-0
+                  ${row.place === 1 ? "text-yellow-400" : "text-zinc-400"}
+                `}>
+                  {row.points || 0}
+                  <span className="text-[10px] text-zinc-600 font-normal ml-0.5">pts</span>
+                </div>
+              </div>
+            );
+          })}
+
+          {overallRows.length === 0 && (
+            <div className="py-12 text-center text-zinc-700 text-sm italic">
+              Нет данных
+            </div>
+          )}
         </div>
       </section>
 
@@ -239,34 +249,44 @@ export default function RatingsPage() {
                   const myRow = rows.find((r) => r.userId === activeUserId);
 
                   return (
-                    <div key={d.slug} className="p-4">
-                      <div className="flex items-center justify-between gap-4 mb-3">
-                        <div className="font-medium">{d.name}</div>
+                    <div key={d.slug} className="px-4 py-3 border-b border-white/5 last:border-0">
+                      <div className="flex items-center justify-between gap-4 mb-2.5">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{d.icon ?? "📌"}</span>
+                          <span className="text-sm font-medium text-zinc-200">{d.name}</span>
+                        </div>
                         {myRow && myRow.place && (
-                          <span className="badge badge-success">
-                            #{myRow.place} • {myRow.value !== null ? (Number.isInteger(myRow.value) ? myRow.value : myRow.value.toFixed(2)) : "—"} {d.unit ?? ""}
+                          <span className="text-[10px] font-mono font-bold text-yellow-500 bg-yellow-500/10 border border-yellow-500/20 px-2 py-0.5 rounded">
+                            #{myRow.place} · {myRow.value !== null ? (Number.isInteger(myRow.value) ? myRow.value : myRow.value.toFixed(2)) : "—"} {d.unit ?? ""}
                           </span>
                         )}
                       </div>
 
-                      <div className="flex flex-wrap gap-2">
-                        {rows.slice(0, 5).map((row) => (
-                          <div
-                            key={row.userId}
-                            className={`px-3 py-1.5 rounded-lg text-sm ${row.userId === activeUserId
-                              ? "bg-[var(--accent-primary)]/20 text-[var(--accent-primary)]"
-                              : "bg-[var(--bg-secondary)] text-[var(--text-secondary)]"
-                              }`}
-                          >
-                            <span className="font-medium">
-                              {row.place === 1 && "🥇"}
-                              {row.place === 2 && "🥈"}
-                              {row.place === 3 && "🥉"}
-                              {row.place && row.place > 3 && `#${row.place}`}
-                            </span>{" "}
-                            {row.userName}: {row.value !== null ? (Number.isInteger(row.value) ? row.value : row.value.toFixed(2)) : "—"}
-                          </div>
-                        ))}
+                      <div className="flex flex-wrap gap-1.5">
+                        {rows.slice(0, 5).map((row) => {
+                          const isMe = row.userId === activeUserId;
+                          const medals = ["🥇", "🥈", "🥉"];
+                          const placeLabel = row.place && row.place <= 3 ? medals[row.place - 1] : `#${row.place}`;
+                          const val = row.value !== null ? (Number.isInteger(row.value) ? row.value : row.value.toFixed(2)) : "—";
+                          return (
+                            <div
+                              key={row.userId}
+                              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium transition-colors
+                                ${isMe
+                                  ? "bg-yellow-500/15 text-yellow-300 border border-yellow-500/25"
+                                  : "bg-white/5 text-zinc-400 border border-white/5"
+                                }`}
+                            >
+                              <span>{placeLabel}</span>
+                              <span className="text-zinc-500">·</span>
+                              <span>{row.userName}</span>
+                              <span className="font-mono text-zinc-500">{val}</span>
+                            </div>
+                          );
+                        })}
+                        {rows.length === 0 && (
+                          <span className="text-xs text-zinc-700 italic">Нет результатов</span>
+                        )}
                       </div>
                     </div>
                   );
@@ -277,24 +297,6 @@ export default function RatingsPage() {
         ))}
       </div>
 
-      {/* System Debug */}
-      <div className="mt-12 p-4 border-t border-white/5 opacity-50 text-[10px] font-mono">
-        <div className="flex justify-between items-center mb-2">
-          <span className="uppercase tracking-widest text-zinc-500 font-bold">Системная отладка</span>
-          <button onClick={loadData} className="px-2 py-0.5 border border-zinc-700 rounded hover:bg-zinc-800 transition-colors">
-            [ОТЛАДКА: Обновить]
-          </button>
-        </div>
-        <pre className="text-zinc-400">
-          Облако: {isCloudData ? "Активно" : "Отключено"}{"\n"}
-          Пользователь: {authUser?.email || "гость"}{"\n"}
-          Локальный ID: {activeUserId}{"\n"}
-          Облачный ID: {authUser?.id || "нет"}{"\n"}
-          Профилей: {debug.profiles}{"\n"}
-          Записей: {debug.results}{"\n"}
-          Обновлено: {debug.lastFetch || "никогда"}
-        </pre>
-      </div>
     </div>
   );
 }

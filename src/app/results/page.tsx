@@ -38,6 +38,7 @@ import {
 import { useAuth } from "@/components/AuthProvider";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { MobilityInfoSection } from "@/components/MobilityInfo";
+import { useToast } from "@/components/Toast";
 
 type Discipline = {
   slug: string;
@@ -84,6 +85,10 @@ function ResultsContent() {
   const [latestBySlug, setLatestBySlug] = useState<Record<string, CloudResult>>({});
   const [values, setValues] = useState<Record<string, string>>({});
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+
+  // Save feedback
+  const [recentlySaved, setRecentlySaved] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // History drill-down state
   const [historySlug, setHistorySlug] = useState<string | null>(null);
@@ -329,13 +334,21 @@ function ResultsContent() {
         }, ...prev]);
       }
 
+      // Visual feedback
+      setRecentlySaved(slug);
+      setTimeout(() => setRecentlySaved(null), 900);
+      toast("Сохранено");
+
       // Cloud sync
       addCloudResult({
         user_id: targetUserId,
         discipline_slug: slug,
         value: numericValue as number,
         recorded_at: now,
-      }).catch(err => console.error("Cloud sync failed:", err));
+      }).catch(err => {
+        console.error("Cloud sync failed:", err);
+        toast("Ошибка синхронизации", "error");
+      });
     } else {
       // Guest: localStorage
       setStore((prev) => {
@@ -343,6 +356,9 @@ function ResultsContent() {
         saveHistoryStore(next);
         return next;
       });
+      setRecentlySaved(slug);
+      setTimeout(() => setRecentlySaved(null), 900);
+      toast("Сохранено");
     }
   };
 
@@ -368,7 +384,9 @@ function ResultsContent() {
       {/* Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">📊 Результаты</h1>
+          <h1 className="text-2xl font-black uppercase italic leading-none mb-1">
+            Результаты
+          </h1>
           <p className="page-subtitle">
             {isCurrentUserAdmin
               ? "Введите результаты атлетов"
@@ -478,7 +496,7 @@ function ResultsContent() {
 
                         <div className="flex items-center gap-2 shrink-0">
                           <input
-                            className={`input input-sm text-center font-mono ${isTimeInput ? 'w-24' : 'w-20'}`}
+                            className={`input input-sm text-center font-mono ${isTimeInput ? 'w-24' : 'w-20'} ${recentlySaved === d.slug ? 'input-saved' : ''}`}
                             type="text"
                             inputMode={isTimeInput ? "text" : "decimal"}
                             placeholder={isTimeInput ? "ММ:СС" : "0"}

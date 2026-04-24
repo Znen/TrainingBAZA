@@ -103,8 +103,8 @@ export default function Home() {
       <div className="max-w-lg mx-auto">
 
         {/* DAILY QUOTE */}
-        <div className="mb-6 opacity-40 select-none">
-          <p className="text-[10px] font-mono leading-tight uppercase tracking-wide text-justify text-zinc-500 border-l border-zinc-800 pl-3">
+        <div className="mb-6 select-none">
+          <p className="text-xs font-mono leading-relaxed text-zinc-600 border-l-2 border-zinc-800 pl-3 italic">
             {quote}
           </p>
         </div>
@@ -150,22 +150,22 @@ export default function Home() {
         {activeProgram && (
           <div className="mb-6">
             {/* Navigation */}
-            <div className="flex justify-between items-center mb-2 px-1">
-              <button onClick={handlePrevWeek} className="p-2 -ml-2 text-zinc-500 hover:text-white transition-colors">
-                ←
+            <div className="flex justify-between items-center mb-3 px-1">
+              <button onClick={handlePrevWeek} className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 rounded transition-all">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
               </button>
-              <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">
-                {format(viewDate, "MMMM", { locale: ru })}
+              <span className="text-xs font-semibold text-zinc-400 uppercase tracking-widest">
+                {format(viewDate, "LLLL yyyy", { locale: ru })}
               </span>
-              <button onClick={handleNextWeek} className="p-2 -mr-2 text-zinc-500 hover:text-white transition-colors">
-                →
+              <button onClick={handleNextWeek} className="w-8 h-8 flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/5 rounded transition-all">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
               </button>
             </div>
 
             {/* Grid Headers */}
-            <div className="grid grid-cols-7 gap-1 mb-1">
+            <div className="grid grid-cols-7 gap-1 mb-1.5">
               {['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'].map(day => (
-                <div key={day} className="text-[9px] text-center text-zinc-600 font-bold">
+                <div key={day} className="text-[10px] text-center text-zinc-700 font-bold tracking-wide">
                   {day}
                 </div>
               ))}
@@ -192,33 +192,32 @@ export default function Home() {
                     key={i}
                     onClick={() => setSelectedDate(d)}
                     className={`
-                                     relative h-10 flex flex-col items-center justify-center rounded-sm
-                                     transition-all duration-200 group
-                                     border border-transparent
-                                 `}
-                    style={{
-                      backgroundColor: dayPhaseInfo.cycle ? (dayColor ? `${dayColor}15` : 'rgba(255,255,255,0.05)') : 'transparent',
-                    }}
+                      relative h-11 flex flex-col items-center justify-center rounded
+                      transition-all duration-150 group border
+                      ${isSelected
+                        ? 'border-yellow-500/60 bg-yellow-500/8'
+                        : isToday
+                        ? 'border-white/15 bg-white/4'
+                        : 'border-transparent hover:border-white/8 hover:bg-white/3'}
+                    `}
+                    style={!isSelected && !isToday && dayPhaseInfo.cycle ? {
+                      backgroundColor: dayColor ? `${dayColor}12` : 'rgba(255,255,255,0.03)',
+                    } : undefined}
                   >
-                    {/* Highlight active selection */}
-                    {isSelected && (
-                      <div className="absolute inset-0 border border-white/50 bg-white/5 z-20" />
-                    )}
-
                     {/* Day Number */}
                     <span className={`
-                                     text-xs font-bold z-10 
-                                     ${isToday ? 'text-yellow-500' : 'text-zinc-400 group-hover:text-white'}
-                                     ${isSelected ? '!text-white' : ''}
-                                 `}>
+                      text-xs font-bold z-10 leading-none
+                      ${isToday && !isSelected ? 'text-yellow-400' : ''}
+                      ${isSelected ? 'text-yellow-300' : !isToday ? 'text-zinc-500 group-hover:text-zinc-200' : ''}
+                    `}>
                       {format(d, "d")}
                     </span>
 
-                    {/* Workout Indicator */}
+                    {/* Workout Indicator dot */}
                     {hasWorkout && (
                       <div
-                        className="h-0.5 w-3 mt-0.5 rounded-full z-10"
-                        style={{ backgroundColor: dayColor || '#3b82f6' }}
+                        className="w-1 h-1 mt-1 rounded-full z-10 opacity-80"
+                        style={{ backgroundColor: dayColor || '#eab308' }}
                       />
                     )}
                   </button>
@@ -258,30 +257,36 @@ export default function Home() {
 
                 {selectedWorkout.blocks.map((block: any, idx: number) => (
                   <div key={block.id} className="relative pl-4">
-                    {/* Vertical Line */}
-                    <div className="absolute left-0 top-0 bottom-0 w-1 bg-zinc-800" />
+                    {/* Vertical accent line */}
+                    <div className="absolute left-0 top-0 bottom-0 w-[2px] rounded-full"
+                      style={{ background: `linear-gradient(to bottom, ${selectedWorkout.cycleColor || '#eab308'}80, transparent)` }}
+                    />
 
                     {/* Block Header */}
                     {block.title && (
                       <div className="mb-3">
-                        <span className="bg-zinc-800 text-white text-[10px] font-bold px-2 py-1 rounded-sm uppercase tracking-wider">
+                        <span className="text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider border"
+                          style={{
+                            color: selectedWorkout.cycleColor || '#a1a1aa',
+                            borderColor: `${selectedWorkout.cycleColor || '#3f3f46'}40`,
+                            background: `${selectedWorkout.cycleColor || '#3f3f46'}12`,
+                          }}
+                        >
                           {block.title}
                         </span>
                       </div>
                     )}
 
                     {/* Rows */}
-                    <div className="space-y-3">
+                    <div className="space-y-2.5">
                       {block.rows.map((row: any) => (
-                        <div key={row.id} className="group">
-                          <div className="flex gap-4 items-baseline">
-                            <span className="font-mono text-sm font-bold w-[2.5ch] shrink-0 text-yellow-500">
-                              {row.prefix}
-                            </span>
-                            <span className="text-zinc-300 text-sm leading-relaxed font-medium">
-                              {row.content}
-                            </span>
-                          </div>
+                        <div key={row.id} className="flex gap-3 items-baseline">
+                          <span className="font-mono text-sm font-bold w-[2.5ch] shrink-0 text-yellow-500/90">
+                            {row.prefix}
+                          </span>
+                          <span className="text-zinc-300 text-sm leading-relaxed">
+                            {row.content}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -291,9 +296,9 @@ export default function Home() {
             </div>
           ) : (
             // Rest State
-            <div className="flex flex-col items-center justify-center h-64 opacity-30 select-none">
-              <div className="text-6xl font-black text-zinc-800 mb-2">REST</div>
-              <div className="text-xs font-mono uppercase tracking-[0.5em] text-zinc-600">Recovery Day</div>
+            <div className="flex flex-col items-center justify-center h-64 select-none">
+              <div className="text-5xl font-black text-zinc-800 mb-3 tracking-tighter">REST</div>
+              <div className="text-xs font-mono uppercase tracking-[0.4em] text-zinc-700">День восстановления</div>
             </div>
           )}
         </div>
