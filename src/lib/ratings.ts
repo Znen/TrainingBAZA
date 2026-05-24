@@ -50,6 +50,9 @@ export type Discipline = {
     category: string;
     unit?: string;
     direction?: "lower_better" | "higher_better";
+    icon?: string;
+    stat?: string;
+    retired?: boolean;
 };
 
 /**
