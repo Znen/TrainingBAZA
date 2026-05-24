@@ -40,3 +40,19 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# logs & build artifacts
+*.log
+*.tar
+ag_build.log
+ag_cli_probe.log
+docker_build_full.log
+
+# local notes & drafts
+идея.md
+техническое_задание.md
+техническое_задание_v2.md
+market_monetization_research.md
+
+# claude dev tools
+.claude/
